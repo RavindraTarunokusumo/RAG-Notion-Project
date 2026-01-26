@@ -1,2 +1,2 @@
 # RAG-Notion-Project
-A multi-agent RAG pipeline using Notion as the document source, with LangSmith integration and A2A protocol.
+A multi-agent RAG pipeline for personal research assistant | Personal Project
