@@ -14,10 +14,10 @@ class NotionEntry:
     """Represents a single entry from the Notion knowledge base."""
     notion_id: str
     title: str
+    topic: str
     source_url: str
     arxiv_id: str | None
-    categories: list[str]
-    topics: list[str]
+    entry_type: str
     notes: str
     created_date: str
     
@@ -55,14 +55,14 @@ class NotionKnowledgeBaseLoader:
             documents = self.loader.load()
             logger.info(f"Fetched {len(documents)} documents from Notion")
             
-            entries = []
+            entries = []    
             for doc in documents:
                 entry = self._parse_notion_document(doc)
                 if entry:
                     entries.append(entry)
             
             self._cached_entries = entries
-            logger.info(f"Successfully successfully parsed {len(entries)} Notion entries")
+            logger.info(f"Successfully parsed {len(entries)} Notion entries")
             return entries
             
         except Exception as e:
@@ -72,67 +72,35 @@ class NotionKnowledgeBaseLoader:
     def _parse_notion_document(self, doc) -> NotionEntry | None:
         """Parse a Notion document into a structured entry."""
         try:
+            # Page content is usually empty; we rely on metadata
             metadata = doc.metadata
-            properties = metadata.get("properties", {})
             
-            # Extract common properties - adjust keys based on your Notion DB schema
-            # Assuming standard schema structure for properties
-             
-            # 1. ID and Title
             notion_id = metadata.get("id", "")
+            title = metadata.get("title", "Untitled")
+            url = metadata.get("url", "") 
+            created_date = metadata.get("publication date", "")
+            if created_date:
+                created_date = created_date.get("start", "")
+            topic = metadata.get("topics")
+            entry_type = metadata.get("type")
+            notes = metadata.get("notes", "")
             
-            # Helper to safely get property content (assuming property type text/title/rich_text)
-            title = "Untitled"
-            # Since NotionDBLoader might flatten or structure properties differently, 
-            # we need to handle potential structures. 
-            # Often NotionDBLoader puts main page content in page_content and metadata in metadata
-            
-            # Note: NotionDBLoader behavior depends on implementation version.
-            # Assuming standard behavior where metadata contains raw properties or flattened dict.
-            # If flattened:
-            # title = metadata.get("Name", "Untitled") or metadata.get("Title", "Untitled")
-            
-            # Let's try to extract from 'properties' dict if it exists (standard Notion API response structure)
-            # or from top-level keys if flattened.
-            
-            # Strategy: look for common keys
-            title = properties.get("Name", properties.get("Title", "Untitled"))
-            if isinstance(title, dict): # If it's the raw property object
-                 # Simplification: This part depends highly on how NotionDBLoader processes the response.
-                 # For safety, let's rely on what we can find.
-                 pass
-
-            # Update: NotionDBLoader usually returns a Document where page_content is the page body.
-            # Metadata contains database properties.
-            # Let's assume the metadata keys correspond to column names.
-            
-            title = metadata.get("Name") or metadata.get("title") or "Untitled"
-            source_url = metadata.get("URL") or metadata.get("Source") or ""
-            
-            # User notes might be the page content itself or a specific property
-            notes = doc.page_content
-            
-            # Categories and Topics (Multi-select)
-            categories = self._parse_multi_select(metadata.get("Category") or metadata.get("Categories"))
-            topics = self._parse_multi_select(metadata.get("Topic") or metadata.get("Topics"))
-            created_date = metadata.get("Created time") or ""
-
             # Attempt to extract Arxiv ID
-            arxiv_id = extract_arxiv_id(source_url)
+            arxiv_id = extract_arxiv_id(url)
             
             return NotionEntry(
                 notion_id=notion_id,
                 title=title,
-                source_url=source_url,
+                topic=topic,
+                source_url=url,
                 arxiv_id=arxiv_id,
-                categories=categories,
-                topics=topics,
+                entry_type=entry_type,
                 notes=notes,
-                created_date=created_date
+                created_date=created_date,
             )
             
         except Exception as e:
-            logger.warning(f"Failed to parse Notion document {doc.metadata.get('id')}: {e}")
+            logger.warning(f"Failed to parse Notion document {doc.metadata.get('title')}: {e}")
             return None
     
     def _parse_multi_select(self, value: Any) -> list[str]:
