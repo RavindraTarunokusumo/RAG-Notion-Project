@@ -2,7 +2,7 @@
 
 > **Project:** Notion Agentic RAG
 > **Last Updated:** 2026-02-01
-> **Current Session:** Session 5 (Reasoner & Synthesiser Agents)
+> **Current Session:** Session 6 (Orchestration, CLI & Final Testing)
 
 ## 📋 Instructions for Agent
 1. **Update this file** at the start and end of every session.
@@ -14,7 +14,19 @@
 
 ---
 
-## 🚀 Session 5: Reasoner & Synthesiser Agents
+## 🚀 Session 6: Orchestration, CLI & Final Testing
+**Goal:** Wire agents with LangGraph, implement CLI, and verify E2E with LangSmith
+**Budget:** ~80,000 tokens
+
+| ID | Task | Priority | Status | File(s) Created/Modified |
+|----|------|----------|--------|--------------------------|
+| **NRAG-023** | LangGraph Workflow Implementation | P0 | [x] | `src/orchestrator/graph.py` |
+| **NRAG-024** | CLI & Entry Point Implementation | P0 | [x] | `main.py` |
+| **NRAG-025** | End-to-End System Test | P0 | [x] | `tests/test_e2e.py` |
+
+---
+
+## 🏁 Session 5: Reasoner & Synthesiser Agents (Completed)
 **Goal:** Implement the analytical and generation agents to complete the reasoning chain
 **Budget:** ~80,000 tokens
 
