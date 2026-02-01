@@ -2,7 +2,7 @@
 
 > **Project:** Notion Agentic RAG
 > **Last Updated:** 2026-02-01
-> **Current Session:** Session 1 (Project Foundation)
+> **Current Session:** Session 3 (Vector Store & Embeddings)
 
 ## 📋 Instructions for Agent
 1. **Update this file** at the start and end of every session.
@@ -14,7 +14,20 @@
 
 ---
 
-## 🚀 Session 2: Notion Integration & Document Pipeline
+## 🚀 Session 3: Vector Store & Embeddings
+**Goal:** Cohere embeddings, ChromaDB setup, and retrieval with reranking
+**Budget:** ~80,000 tokens
+
+| ID | Task | Priority | Status | File(s) Created/Modified |
+|----|------|----------|--------|--------------------------|
+| **NRAG-012** | Cohere Embeddings Configuration | P0 | [ ] | |
+| **NRAG-013** | ChromaDB Vector Store Setup | P0 | [ ] | |
+| **NRAG-014** | Cohere Rerank Integration | P1 | [ ] | |
+| **NRAG-015** | Ingestion Integration Script | P0 | [ ] | |
+
+---
+
+## 🏁 Session 2: Notion Integration & Document Pipeline (Completed)
 **Goal:** Notion document loading, Arxiv paper fetching, and metadata merging
 **Budget:** ~80,000 tokens
 
