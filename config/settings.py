@@ -1,5 +1,6 @@
+from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings
-from pydantic import Field, BaseModel
+
 
 class CohereModelConfig(BaseModel):
     planner_model: str = "command-r-08-2024"

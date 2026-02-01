@@ -1,8 +1,11 @@
 import os
+from collections.abc import Callable
 from functools import wraps
-from typing import Callable
+
 from langsmith import traceable
+
 from config.settings import settings
+
 
 def initialize_tracing():
     """Initialize LangSmith tracing with project settings."""

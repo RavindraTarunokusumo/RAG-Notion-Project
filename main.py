@@ -1,7 +1,8 @@
 import argparse
 import logging
-from src.utils.tracing import initialize_tracing
+
 from config.settings import settings
+from src.utils.tracing import initialize_tracing
 
 logging.basicConfig(
     level=logging.INFO,

@@ -1,7 +1,8 @@
-import re
 import hashlib
-from typing import List
+import re
+
 from langchain_core.documents import Document
+
 
 def extract_arxiv_id(url: str) -> str | None:
     """
@@ -26,7 +27,7 @@ def extract_arxiv_id(url: str) -> str | None:
              return match.group(1)
     return None
 
-def deduplicate_documents(docs: List[Document]) -> List[Document]:
+def deduplicate_documents(docs: list[Document]) -> list[Document]:
     """Remove duplicate documents based on content hash."""
     seen_hashes = set()
     unique_docs = []
@@ -39,7 +40,7 @@ def deduplicate_documents(docs: List[Document]) -> List[Document]:
     
     return unique_docs
 
-def format_documents_for_prompt(docs: List[Document], max_chars: int = 15000) -> str:
+def format_documents_for_prompt(docs: list[Document], max_chars: int = 15000) -> str:
     """Format documents for inclusion in LLM prompts."""
     formatted_parts = []
     total_chars = 0
