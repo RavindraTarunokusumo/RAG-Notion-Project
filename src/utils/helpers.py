@@ -1,6 +1,6 @@
 import re
 import hashlib
-from typing import List, Any
+from typing import List
 from langchain_core.documents import Document
 
 def extract_arxiv_id(url: str) -> str | None:
