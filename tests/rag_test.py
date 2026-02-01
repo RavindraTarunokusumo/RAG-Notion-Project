@@ -1,8 +1,10 @@
 import logging
+
 from langchain_core.documents import Document
+
 from src.rag.embeddings import get_embeddings
-from src.rag.vectorstore import get_vector_store
 from src.rag.retriever import get_retriever
+from src.rag.vectorstore import get_vector_store
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
