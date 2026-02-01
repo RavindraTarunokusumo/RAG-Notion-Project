@@ -10,11 +10,24 @@
 3. **Log changes** in the "Change Log" section with commit context if available.
 4. **Record blockers** or deviation from the original plan in "Notes & Decisions".
 5. **Check `notion_agentic_rag_backlog.md`** for detailed requirements of each task.
-6. **Commit Responsibility** must be respected; only if GitHub MCP is available, otherwise ignore this responsibility.
+6. **Agent Responsibility** must be respected; only commit/push if GitHub MCP is available, otherwise ignore this responsibility.
 
 ---
 
-## 🚀 Session 1: Project Foundation
+## 🚀 Session 2: Notion Integration & Document Pipeline
+**Goal:** Notion document loading, Arxiv paper fetching, and metadata merging
+**Budget:** ~80,000 tokens
+
+| ID | Task | Priority | Status | File(s) Created/Modified |
+|----|------|----------|--------|--------------------------|
+| **NRAG-008** | Notion Loader Implementation | P0 | [x] | `src/loaders/notion_loader.py` |
+| **NRAG-009** | Arxiv Loader for Full Paper Content | P0 | [x] | `src/loaders/arxiv_loader.py` |
+| **NRAG-010** | Document Pipeline Orchestration | P0 | [x] | `src/loaders/pipeline.py` |
+| **NRAG-011** | Document Processing & Text Splitting | P0 | [x] | `src/rag/text_processing.py` |
+
+---
+
+## 🏁 Session 1: Project Foundation (Completed)
 **Goal:** Initialize project structure, environment, and core utilities.
 **Budget:** ~80,000 tokens
 
@@ -31,7 +44,6 @@
 ---
 
 ## 🔮 Future Sessions (Overview)
-- **Session 2:** Notion Integration & Document Pipeline (NRAG-008 to NRAG-011)
 - **Session 3:** Vector Store & Embeddings (NRAG-012 to NRAG-015)
 - **Session 4:** Planner & Researcher Agents (NRAG-016 to NRAG-017+)
 - **Session 5:** Reasoner & Synthesiser Agents
@@ -44,6 +56,7 @@
 - **[2026-02-01]** Switched to **uv** for dependency management. Updated `notion_agentic_rag_backlog.md`.
 - **[2026-02-01]** Initialized `uv` project and installed all dependencies (NRAG-002).
 - **[2026-02-01]** Completed Session 1: Created project structure, configuration files, and core utilities (NRAG-001 to NRAG-007). Committed changes.
+- **[2026-02-01]** Completed Session 2: Implemented Notion Loader, Arxiv Loader, Document Pipeline, and Text Processor (NRAG-008 to NRAG-011).
 
 ## 🧠 Notes & Decisions
 - Following execution model defined in `notion_agentic_rag_backlog.md`.
@@ -52,4 +65,4 @@
 - **[2026-02-01]** Verified Python 3.14 compatibility: Core libraries (LangChain, Pydantic v2) are supported. ChromaDB may require build tools if wheels aren't available for Windows yet. Proceeding with `^3.11` constraint which includes 3.14.
 
 ## ⚠️ Known Issues / Blockers
-*(None)*
+- **[x] [2026-02-01] Pydantic Settings Validation Error**: `langchain_endpoint` was missing in `Settings` model. Fixed in `config/settings.py`.

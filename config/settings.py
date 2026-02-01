@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     # LangSmith
     langchain_tracing_v2: bool = True
     langchain_project: str = "notion-agentic-rag"
+    langchain_endpoint: str = "https://api.smith.langchain.com"
     
     # Vector Store
     chroma_persist_dir: str = "./data/chroma_db"
