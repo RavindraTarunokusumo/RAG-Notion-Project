@@ -2,7 +2,7 @@
 
 > **Project:** Notion Agentic RAG
 > **Last Updated:** 2026-02-01
-> **Current Session:** Session 3 (Vector Store & Embeddings)
+> **Current Session:** Session 4 (Planner & Researcher Agents)
 
 ## 📋 Instructions for Agent
 1. **Update this file** at the start and end of every session.
@@ -14,16 +14,29 @@
 
 ---
 
-## 🚀 Session 3: Vector Store & Embeddings
+## 🚀 Session 4: Planner & Researcher Agents
+**Goal:** Implement the first two agents in the pipeline (Planner & Researcher)
+**Budget:** ~80,000 tokens
+
+| ID | Task | Priority | Status | File(s) Created/Modified |
+|----|------|----------|--------|--------------------------|
+| **NRAG-016** | Agent State Schema | P0 | [x] | `src/orchestrator/state.py` |
+| **NRAG-017** | LLM Factory | P0 | [x] | `src/agents/llm_factory.py` |
+| **NRAG-018** | Planner Agent Implementation | P0 | [x] | `src/agents/planner.py` |
+| **NRAG-019** | Researcher Agent Implementation | P0 | [x] | `src/agents/researcher.py` |
+
+---
+
+## 🏁 Session 3: Vector Store & Embeddings (Completed)
 **Goal:** Cohere embeddings, ChromaDB setup, and retrieval with reranking
 **Budget:** ~80,000 tokens
 
 | ID | Task | Priority | Status | File(s) Created/Modified |
 |----|------|----------|--------|--------------------------|
-| **NRAG-012** | Cohere Embeddings Configuration | P0 | [ ] | |
-| **NRAG-013** | ChromaDB Vector Store Setup | P0 | [ ] | |
-| **NRAG-014** | Cohere Rerank Integration | P1 | [ ] | |
-| **NRAG-015** | Ingestion Integration Script | P0 | [ ] | |
+| **NRAG-012** | Cohere Embeddings Configuration | P0 | [x] | `src/rag/embeddings.py` |
+| **NRAG-013** | ChromaDB Vector Store Setup | P0 | [x] | `src/rag/vectorstore.py` |
+| **NRAG-014** | Cohere Rerank Integration | P1 | [x] | `src/rag/retriever.py` |
+| **NRAG-015** | Ingestion Integration Script | P0 | [x] | `src/ingest.py` |
 
 ---
 
