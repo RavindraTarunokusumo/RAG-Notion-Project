@@ -192,34 +192,38 @@ notion-agentic-rag/
 **Status:** To Do
 
 **Description:**  
-Create `pyproject.toml` with all required dependencies and version constraints.
+Create `pyproject.toml` with all required dependencies and version constraints using `uv`.
 
 **Acceptance Criteria:**
-- [ ] `pyproject.toml` created with Poetry configuration
+- [ ] `pyproject.toml` created with standard PEP 621 configuration (uv)
 - [ ] All core dependencies specified with version ranges
 - [ ] Development dependencies separated
-- [ ] Python version constraint: `^3.11`
+- [ ] Python version constraint: `>=3.11`
 
 **Dependencies:**
 ```toml
-[tool.poetry.dependencies]
-python = "^3.11"
-langchain = "^0.3.0"
-langchain-cohere = "^0.5.0"
-langchain-community = "^0.3.0"
-langgraph = "^0.2.0"
-langsmith = "^0.2.0"
-chromadb = "^0.5.0"
-python-dotenv = "^1.0.0"
-arxiv = "^2.1.0"
-pydantic = "^2.0.0"
-httpx = "^0.27.0"
+[project]
+requires-python = ">=3.11"
+dependencies = [
+    "langchain>=0.3.0",
+    "langchain-cohere>=0.5.0",
+    "langchain-community>=0.3.0",
+    "langgraph>=0.2.0",
+    "langsmith>=0.2.0",
+    "chromadb>=0.5.0",
+    "python-dotenv>=1.0.0",
+    "arxiv>=2.1.0",
+    "pydantic>=2.0.0",
+    "httpx>=0.27.0",
+]
 
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.0.0"
-pytest-asyncio = "^0.23.0"
-black = "^24.0.0"
-ruff = "^0.3.0"
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "black>=24.0.0",
+    "ruff>=0.3.0",
+]
 ```
 
 ---
