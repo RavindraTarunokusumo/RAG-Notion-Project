@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 
 from src.agents.llm_factory import get_agent_llm
 from src.orchestrator.state import AgentState, Analysis
+from src.utils.tracing import agent_trace
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +43,7 @@ def format_docs(docs):
          for i, d in enumerate(docs)]
     )
 
+@agent_trace("reasoner", tags=["reasoning"])
 def reasoner_node(state: AgentState) -> dict:
     """
     Reasoner Agent: Analyzes retrieved documents to answer sub-tasks.

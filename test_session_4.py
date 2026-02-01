@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import List
+
 from src.agents.planner import planner_node
 from src.agents.researcher import researcher_node
 from src.orchestrator.state import AgentState

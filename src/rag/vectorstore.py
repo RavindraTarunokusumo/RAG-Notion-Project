@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 
 from langchain_community.vectorstores import Chroma
 from langchain_core.documents import Document
@@ -8,6 +9,18 @@ from config.settings import settings
 from src.rag.embeddings import get_embeddings
 
 logger = logging.getLogger(__name__)
+
+def sanitize_metadata(metadata: dict) -> dict:
+    """Convert list values in metadata to strings for ChromaDB compatibility."""
+    if not metadata:
+        return {}
+    sanitized = {}
+    for k, v in metadata.items():
+        if isinstance(v, list):
+            sanitized[k] = ", ".join([str(i) for i in v])
+        else:
+            sanitized[k] = v
+    return sanitized
 
 class VectorStoreManager:
     """
@@ -27,14 +40,47 @@ class VectorStoreManager:
             persist_directory=self.persist_directory
         )
         
-    def add_documents(self, documents: list[Document]):
-        """Add documents to the vector store."""
+    def add_documents(self, documents: list[Document], batch_size: int = None, delay: float = None):
+        """
+        Add documents to the vector store.
+        
+        Args:
+            documents: List of documents to add.
+            batch_size: Number of documents to process in one batch. Defaults to settings.
+            delay: Time in seconds to wait between batches. Defaults to settings.
+        """
+        batch_size = batch_size or settings.embedding_batch_size
+        delay = delay if delay is not None else settings.embedding_delay
+
         if not documents:
             logger.warning("No documents to add to vector store.")
             return
             
-        logger.info(f"Adding {len(documents)} documents to ChromaDB...")
-        self.vectorstore.add_documents(documents)
+        logger.info(f"Adding {len(documents)} documents to ChromaDB in batches of {batch_size}...")
+        
+        # Pre-process documents to ensure metadata is compatible
+        for doc in documents:
+            doc.metadata = sanitize_metadata(doc.metadata)
+
+        total_docs = len(documents)
+        for i in range(0, total_docs, batch_size):
+            batch = documents[i : i + batch_size]
+            batch_num = (i // batch_size) + 1
+            total_batches = (total_docs + batch_size - 1) // batch_size
+            
+            logger.info(f"Processing batch {batch_num}/{total_batches} ({len(batch)} docs)")
+            
+            try:
+                self.vectorstore.add_documents(batch)
+                # Sleep between batches, but not after the last one
+                if i + batch_size < total_docs:
+                    logger.debug(f"Sleeping for {delay} seconds to respect rate limits...")
+                    time.sleep(delay)
+            except Exception as e:
+                logger.error(f"Failed to add batch {batch_num}: {e}")
+                # We raise to stop the process if ingestion fails
+                raise e
+                
         logger.info("Documents added successfully.")
 
     def get_retriever(self, k: int = 10, search_type: str = "similarity"):

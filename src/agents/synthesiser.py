@@ -5,6 +5,7 @@ from langchain_core.prompts import ChatPromptTemplate
 
 from src.agents.llm_factory import get_agent_llm
 from src.orchestrator.state import AgentState
+from src.utils.tracing import agent_trace
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +33,7 @@ def get_synthesiser_prompt():
         """)
     ])
 
+@agent_trace("synthesiser", tags=["synthesis"])
 def synthesiser_node(state: AgentState) -> dict:
     """
     Synthesiser Agent: Generates the final answer.

@@ -2,21 +2,26 @@ import logging
 
 from src.loaders.pipeline import DocumentPipeline
 from src.rag.vectorstore import get_vector_store
-from src.utils.tracing import setup_tracing
+from src.utils.tracing import initialize_tracing
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def run_ingestion():
+def run_ingestion(rebuild: bool = False):
     """
     Run the full ingestion pipeline:
     1. Load and process documents from Notion and Arxiv.
     2. Store them in the Vector Database (ChromaDB).
+    
+    Args:
+        rebuild (bool): If True, clears the vector store before ingestion.
     """
-    setup_tracing()
+    initialize_tracing()
     
     logger.info("Starting ingestion process...")
+    if rebuild:
+        logger.info("Rebuild flag is set (clearing not implemented yet, proceeding with append).")
     
     pipeline = DocumentPipeline()
     try:

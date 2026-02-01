@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 from src.agents.llm_factory import get_agent_llm
 from src.orchestrator.state import AgentState
 from src.rag.retriever import get_retriever
+from src.utils.tracing import agent_trace
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,7 @@ def get_query_optimizer_prompt(parser):
         ("user", "Task: {task}\nKeywords: {keywords}")
     ]).partial(format_instructions=parser.get_format_instructions())
 
+@agent_trace("researcher", tags=["retrieval"])
 def researcher_node(state: AgentState) -> dict:
     """
     Researcher Agent: Executes retrieval for each sub-task.

@@ -112,8 +112,8 @@ class DocumentPipeline:
                     "notion_id": entry.notion_id,
                     "title": entry.title,
                     "url": entry.source_url,
-                    "categories": entry.categories,
-                    "topics": entry.topics,
+                    "category": entry.entry_type,
+                    "topic": entry.topic,
                     "created_date": entry.created_date
                 }
             )

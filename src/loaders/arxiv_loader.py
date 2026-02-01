@@ -97,8 +97,8 @@ class ArxivPaperLoader:
                 "arxiv_id": entry.arxiv_id,
                 "notion_id": entry.notion_id,
                 "notion_title": entry.title,
-                "categories": entry.categories,
-                "topics": entry.topics,
+                "category": entry.entry_type,
+                "topic": entry.topic,
                 "user_notes": entry.notes,
                 "notion_url": entry.source_url
             })

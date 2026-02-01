@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 
 from src.agents.llm_factory import get_agent_llm
 from src.orchestrator.state import AgentState, SubTask
+from src.utils.tracing import agent_trace
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +33,7 @@ def get_planner_prompt(parser):
         ("user", "Query: {query}")
     ]).partial(format_instructions=parser.get_format_instructions())
 
+@agent_trace("planner", tags=["planning"])
 def planner_node(state: AgentState) -> dict:
     """
     Planner Agent: Decomposes the query into sub-tasks.

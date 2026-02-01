@@ -120,7 +120,7 @@ If a session exhausts its token budget before completing all items:
 
 ---
 
-# Agent Responsibility
+## Agent Responsibility
 
 ### Commit Responsibility
 
@@ -274,11 +274,11 @@ class Settings(BaseSettings):
     cohere_api_key: str = Field(..., env="COHERE_API_KEY")
     notion_token: str = Field(..., env="NOTION_TOKEN")
     notion_database_id: str = Field(..., env="NOTION_DATABASE_ID")
-    langchain_api_key: str = Field(..., env="LANGCHAIN_API_KEY")
+    langsmith_api_key: str = Field(..., env="LANGCHAIN_API_KEY")
     
     # LangSmith
-    langchain_tracing_v2: bool = True
-    langchain_project: str = "notion-agentic-rag"
+    langsmith_tracing: bool = True
+    langsmith_project: str = "notion-agentic-rag"
     
     # Vector Store
     chroma_persist_dir: str = "./data/chroma_db"
@@ -334,14 +334,14 @@ NOTION_TOKEN=your_notion_integration_token_here
 NOTION_DATABASE_ID=your_database_id_here
 
 # LangSmith API Key (https://smith.langchain.com/)
-LANGCHAIN_API_KEY=your_langsmith_api_key_here
+LANGSMITH_API_KEY=your_langsmith_api_key_here
 
 # ===========================================
 # OPTIONAL: LangSmith Configuration
 # ===========================================
-LANGCHAIN_TRACING_V2=true
-LANGCHAIN_PROJECT=notion-agentic-rag
-LANGCHAIN_ENDPOINT=https://api.smith.langchain.com
+LANGSMITH_TRACING=true
+LANGSMITH_PROJECT=notion-agentic-rag
+LANGSMITH_ENDPOINT=https://eu.api.smith.langchain.com
 
 # ===========================================
 # OPTIONAL: Vector Store
@@ -381,10 +381,10 @@ from config.settings import settings
 
 def initialize_tracing():
     """Initialize LangSmith tracing with project settings."""
-    os.environ["LANGCHAIN_TRACING_V2"] = str(settings.langchain_tracing_v2).lower()
-    os.environ["LANGCHAIN_API_KEY"] = settings.langchain_api_key
-    os.environ["LANGCHAIN_PROJECT"] = settings.langchain_project
-    os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
+    os.environ["LANGCHAIN_TRACING_V2"] = str(settings.langsmith_tracing).lower()
+    os.environ["LANGSMITH_API_KEY"] = settings.langsmith_api_key
+    os.environ["LANGSMITH_PROJECT"] = settings.langsmith_project
+    os.environ["LANGSMITH_ENDPOINT"] = "https://eu.api.smith.langchain.com"
 
 def agent_trace(
     agent_name: str,
@@ -556,7 +556,7 @@ def main():
     
     # Initialize tracing
     initialize_tracing()
-    logger.info(f"LangSmith project: {settings.langchain_project}")
+    logger.info(f"LangSmith project: {settings.langsmith_project}")
     
     if args.ingest:
         logger.info("Starting document ingestion...")
@@ -3051,14 +3051,254 @@ Create comprehensive README with setup and usage instructions.
 
 ## Future Backlog
 
-### Epic: A2A Protocol Integration
+### Epic: Dynamic Tool Agents with A2A Protocol
+
+> **Design Note:** The core pipeline (Planner → Researcher → Reasoner → Synthesiser) uses a deterministic LangGraph workflow where agent sequencing is fixed. A2A Agent Cards are **not useful** for these core agents since they don't need to discover each other.
+>
+> Instead, A2A is valuable for **dynamic tool agents** that core agents can optionally invoke based on context. These tool agents are discovered at runtime via Agent Cards, enabling flexible capability extension without modifying the core workflow.
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Fixed LangGraph Pipeline                      │
+│  Planner ──▶ Researcher ──▶ Reasoner ──▶ Synthesiser            │
+└─────────────────────────────────────────────────────────────────┘
+                    │              │            │
+                    ▼              ▼            ▼
+         ┌─────────────────────────────────────────────┐
+         │     Dynamic A2A Tool Agents (Optional)       │
+         │  ┌───────────┐ ┌───────────┐ ┌────────────┐ │
+         │  │ Web       │ │ Code      │ │ Citation   │ │
+         │  │ Searcher  │ │ Executor  │ │ Validator  │ │
+         │  └───────────┘ └───────────┘ └────────────┘ │
+         │  ┌───────────┐ ┌───────────┐ ┌────────────┐ │
+         │  │ Math      │ │ Diagram   │ │ Fact       │ │
+         │  │ Solver    │ │ Generator │ │ Checker    │ │
+         │  └───────────┘ └───────────┘ └────────────┘ │
+         └─────────────────────────────────────────────┘
+                         ▲
+                         │
+              A2A Agent Cards for Discovery
+              (Capabilities, Input/Output Schemas)
+```
 
 | ID | Item | Token Estimate | Priority |
 |----|------|----------------|----------|
-| NRAG-027 | A2A Agent Card Implementation | 15,000 | P2 |
-| NRAG-028 | A2A Server Endpoints | 20,000 | P2 |
-| NRAG-029 | A2A Client Communication | 15,000 | P2 |
-| NRAG-030 | A2A Discovery Service | 12,000 | P2 |
+| NRAG-027 | A2A Tool Agent Framework | 18,000 | P2 |
+| NRAG-028 | Tool Agent: Web Searcher | 15,000 | P2 |
+| NRAG-029 | Tool Agent: Code Executor | 20,000 | P2 |
+| NRAG-030 | Tool Agent: Citation Validator | 12,000 | P3 |
+| NRAG-031 | Tool Agent: Math Solver | 15,000 | P3 |
+| NRAG-032 | Tool Agent: Diagram Generator | 18,000 | P3 |
+| NRAG-033 | A2A Discovery & Invocation Client | 15,000 | P2 |
+
+#### NRAG-027: A2A Tool Agent Framework
+**Priority:** P2 - Medium  
+**Token Estimate:** 18,000 tokens  
+**Status:** Backlog
+
+**Description:**  
+Create the base framework for dynamic tool agents that core agents can discover and invoke via A2A protocol.
+
+**Acceptance Criteria:**
+- [ ] Base `ToolAgent` class with A2A compliance
+- [ ] Agent Card generation for each tool agent
+- [ ] Standardized input/output schemas
+- [ ] Registration mechanism for tool agents
+- [ ] Health check and capability reporting
+
+**Implementation Sketch:**
+```python
+# src/tools/base.py
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import Any, Dict, List
+
+@dataclass
+class AgentCard:
+    """A2A Agent Card for tool discovery."""
+    name: str
+    description: str
+    version: str
+    capabilities: List[str]
+    input_schema: Dict[str, Any]
+    output_schema: Dict[str, Any]
+    endpoint: str
+
+class ToolAgent(ABC):
+    """Base class for A2A-compliant tool agents."""
+    
+    @abstractmethod
+    def get_agent_card(self) -> AgentCard:
+        """Return the A2A agent card for discovery."""
+        pass
+    
+    @abstractmethod
+    async def execute(self, task: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute a task and return results."""
+        pass
+    
+    def can_handle(self, task_description: str) -> float:
+        """Return confidence (0-1) that this agent can handle the task."""
+        pass
+```
+
+---
+
+#### NRAG-028: Tool Agent - Web Searcher
+**Priority:** P2 - Medium  
+**Token Estimate:** 15,000 tokens  
+**Status:** Backlog
+
+**Description:**  
+Dynamic tool agent for real-time web search when knowledge base lacks current information.
+
+**Invoked By:** Researcher Agent  
+**Trigger Conditions:**
+- Query contains "latest", "current", "recent", "2024", "2025"
+- Knowledge base has no relevant documents
+- Topic is fast-moving (AI news, releases, etc.)
+
+**Agent Card:**
+```json
+{
+    "name": "web-searcher",
+    "description": "Searches the web for current information not in the knowledge base",
+    "capabilities": ["web_search", "news_search", "site_specific_search"],
+    "input_schema": {
+        "query": "string",
+        "max_results": "integer",
+        "date_filter": "string (optional)"
+    },
+    "output_schema": {
+        "results": [{"title": "string", "url": "string", "snippet": "string"}],
+        "search_metadata": {"total_results": "integer", "search_time": "float"}
+    }
+}
+```
+
+---
+
+#### NRAG-029: Tool Agent - Code Executor
+**Priority:** P2 - Medium  
+**Token Estimate:** 20,000 tokens  
+**Status:** Backlog
+
+**Description:**  
+Executes code snippets found in papers to validate algorithms or demonstrate concepts.
+
+**Invoked By:** Reasoner Agent  
+**Trigger Conditions:**
+- Retrieved documents contain code blocks
+- Query asks "how does X work" for algorithmic topics
+- Reasoner needs to verify computational claims
+
+**Security Considerations:**
+- Sandboxed execution environment
+- Resource limits (CPU, memory, time)
+- No network access from sandbox
+- Whitelist of allowed libraries
+
+---
+
+#### NRAG-030: Tool Agent - Citation Validator
+**Priority:** P3 - Low  
+**Token Estimate:** 12,000 tokens  
+**Status:** Backlog
+
+**Description:**  
+Validates that citations in the knowledge base are accurate and papers exist.
+
+**Invoked By:** Reasoner Agent  
+**Trigger Conditions:**
+- High-stakes queries requiring verified sources
+- Contradictions detected between sources
+- User explicitly requests citation verification
+
+---
+
+#### NRAG-031: Tool Agent - Math Solver
+**Priority:** P3 - Low  
+**Token Estimate:** 15,000 tokens  
+**Status:** Backlog
+
+**Description:**  
+Solves mathematical equations and validates formulas found in papers.
+
+**Invoked By:** Reasoner Agent  
+**Trigger Conditions:**
+- Documents contain LaTeX equations
+- Query involves quantitative analysis
+- Need to verify mathematical claims
+
+---
+
+#### NRAG-032: Tool Agent - Diagram Generator
+**Priority:** P3 - Low  
+**Token Estimate:** 18,000 tokens  
+**Status:** Backlog
+
+**Description:**  
+Generates visual diagrams (architecture, flowcharts, etc.) from textual descriptions.
+
+**Invoked By:** Synthesiser Agent  
+**Trigger Conditions:**
+- Query asks about system architecture
+- Complex multi-step processes need visualization
+- User requests visual explanation
+
+**Output Formats:** Mermaid, PlantUML, SVG
+
+---
+
+#### NRAG-033: A2A Discovery & Invocation Client
+**Priority:** P2 - Medium  
+**Token Estimate:** 15,000 tokens  
+**Status:** Backlog
+
+**Description:**  
+Client library for core agents to discover and invoke tool agents via A2A protocol.
+
+**Acceptance Criteria:**
+- [ ] Discover available tool agents from registry
+- [ ] Filter agents by capability
+- [ ] Send tasks and receive results
+- [ ] Handle timeouts and failures gracefully
+- [ ] Cache agent cards for performance
+
+**Implementation Sketch:**
+```python
+# src/tools/client.py
+class A2AToolClient:
+    """Client for discovering and invoking tool agents."""
+    
+    def __init__(self, registry_url: str):
+        self.registry_url = registry_url
+        self._agent_cache: Dict[str, AgentCard] = {}
+    
+    async def discover_agents(
+        self, 
+        capability: str = None
+    ) -> List[AgentCard]:
+        """Discover available tool agents, optionally filtered by capability."""
+        pass
+    
+    async def invoke_tool(
+        self,
+        agent_name: str,
+        task: Dict[str, Any],
+        timeout: float = 30.0
+    ) -> Dict[str, Any]:
+        """Invoke a tool agent and return results."""
+        pass
+    
+    def select_best_agent(
+        self,
+        task_description: str,
+        available_agents: List[AgentCard]
+    ) -> AgentCard | None:
+        """Use LLM to select the best agent for a task."""
+        pass
+```
 
 ### Epic: User Interface
 

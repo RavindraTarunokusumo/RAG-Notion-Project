@@ -14,6 +14,7 @@ dependencies = [
     "langgraph>=0.2.14",
     "langsmith>=0.1.98",
     "pydantic>=2.8.2",
+    "pymupdf>=1.26.7",
     "python-dotenv>=1.0.1",
 ]
 

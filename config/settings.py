@@ -18,16 +18,18 @@ class Settings(BaseSettings):
     cohere_api_key: str = Field(..., description="Cohere API Key")
     notion_token: str = Field(..., description="Notion Integration Token")
     notion_database_id: str = Field(..., description="Notion Database ID")
-    langchain_api_key: str = Field(..., description="LangSmith API Key")
+    langsmith_api_key: str = Field(..., description="LangSmith API Key")
     
     # LangSmith
-    langchain_tracing_v2: bool = True
-    langchain_project: str = "notion-agentic-rag"
-    langchain_endpoint: str = "https://api.smith.langchain.com"
+    langsmith_tracing: bool = True
+    langsmith_project: str = "notion-agentic-rag"
+    langsmith_endpoint: str = "https://eu.api.smith.langchain.com"
     
     # Vector Store
     chroma_persist_dir: str = "./data/chroma_db"
     collection_name: str = "notion_knowledge_base"
+    embedding_batch_size: int = 10
+    embedding_delay: float = 10.0 # Conservative default for trial keys (approx 5-6 RPM)
     
     # RAG Settings
     chunk_size: int = 1000

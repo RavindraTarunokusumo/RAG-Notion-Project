@@ -1,6 +1,12 @@
 import logging
 import time
-from src.agents import planner_node, researcher_node, reasoner_node, synthesiser_node
+
+from src.agents import (
+    planner_node,
+    reasoner_node,
+    researcher_node,
+    synthesiser_node,
+)
 from src.orchestrator.state import AgentState
 
 logging.basicConfig(level=logging.INFO)
@@ -25,12 +31,14 @@ def test_full_agent_chain():
     # 1. Planner
     logger.info("\n--- 1. Planner Agent ---")
     state.update(planner_node(state))
-    if state['error']: return
+    if state['error']: 
+        return
 
     # 2. Researcher
     logger.info("\n--- 2. Researcher Agent ---")
     state.update(researcher_node(state))
-    if state['error']: return
+    if state['error']: 
+        return
     
     # 3. Reasoner
     logger.info("\n--- 3. Reasoner Agent ---")

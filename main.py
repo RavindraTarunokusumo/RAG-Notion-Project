@@ -4,8 +4,8 @@ import sys
 from datetime import datetime
 
 from config.settings import settings
-from src.utils.tracing import initialize_tracing
 from src.orchestrator.graph import create_rag_graph
+from src.utils.tracing import initialize_tracing
 
 # Configure logging
 logging.basicConfig(
