@@ -20,13 +20,13 @@
 
 | ID | Task | Priority | Status | File(s) Created/Modified |
 |----|------|----------|--------|--------------------------|
-| **NRAG-001** | Project Structure Initialization | P0 | [ ] | |
+| **NRAG-001** | Project Structure Initialization | P0 | [x] | `src/`, `config/`, `tests/`, `README.md` |
 | **NRAG-002** | Dependency Configuration (`pyproject.toml`) | P0 | [x] | `pyproject.toml`, `.python-version`, `.venv/` |
-| **NRAG-003** | Configuration Module (`config/settings.py`) | P0 | [ ] | |
-| **NRAG-004** | Environment Template (`.env.example`) | P0 | [ ] | |
-| **NRAG-005** | LangSmith Tracing Setup (`src/utils/tracing.py`) | P1 | [ ] | |
-| **NRAG-006** | Utility Helpers Module (`src/utils/helpers.py`) | P1 | [ ] | |
-| **NRAG-007** | Main Entry Point (`main.py`) | P1 | [ ] | |
+| **NRAG-003** | Configuration Module (`config/settings.py`) | P0 | [x] | `config/settings.py` |
+| **NRAG-004** | Environment Template (`.env.example`) | P0 | [x] | `.env.example` |
+| **NRAG-005** | LangSmith Tracing Setup (`src/utils/tracing.py`) | P1 | [x] | `src/utils/tracing.py` |
+| **NRAG-006** | Utility Helpers Module (`src/utils/helpers.py`) | P1 | [x] | `src/utils/helpers.py` |
+| **NRAG-007** | Main Entry Point (`main.py`) | P1 | [x] | `main.py` |
 
 ---
 
