@@ -2,7 +2,7 @@
 
 > **Project:** Notion Agentic RAG
 > **Last Updated:** 2026-02-01
-> **Current Session:** Session 4 (Planner & Researcher Agents)
+> **Current Session:** Session 5 (Reasoner & Synthesiser Agents)
 
 ## 📋 Instructions for Agent
 1. **Update this file** at the start and end of every session.
@@ -14,7 +14,19 @@
 
 ---
 
-## 🚀 Session 4: Planner & Researcher Agents
+## 🚀 Session 5: Reasoner & Synthesiser Agents
+**Goal:** Implement the analytical and generation agents to complete the reasoning chain
+**Budget:** ~80,000 tokens
+
+| ID | Task | Priority | Status | File(s) Created/Modified |
+|----|------|----------|--------|--------------------------|
+| **NRAG-020** | Reasoner Agent Implementation | P0 | [x] | `src/agents/reasoner.py` |
+| **NRAG-021** | Synthesiser Agent Implementation | P0 | [x] | `src/agents/synthesiser.py` |
+| **NRAG-022** | Agent Module Exports | P1 | [x] | `src/agents/__init__.py` |
+
+---
+
+## 🏁 Session 4: Planner & Researcher Agents (Completed)
 **Goal:** Implement the first two agents in the pipeline (Planner & Researcher)
 **Budget:** ~80,000 tokens
 
