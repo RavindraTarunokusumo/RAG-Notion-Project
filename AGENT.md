@@ -10,7 +10,7 @@
 3. **Log changes** in the "Change Log" section with commit context if available.
 4. **Record blockers** or deviation from the original plan in "Notes & Decisions".
 5. **Check `notion_agentic_rag_backlog.md`** for detailed requirements of each task.
-6. **Commit/Push** only if GitHub MCP is available, otherwise ignore this responsibility.
+6. **Commit Responsibility** must be respected; only if GitHub MCP is available, otherwise ignore this responsibility.
 
 ---
 
@@ -43,6 +43,7 @@
 - **[2026-02-01]** Initialized `AGENT.md` and populated Session 1 backlog items.
 - **[2026-02-01]** Switched to **uv** for dependency management. Updated `notion_agentic_rag_backlog.md`.
 - **[2026-02-01]** Initialized `uv` project and installed all dependencies (NRAG-002).
+- **[2026-02-01]** Completed Session 1: Created project structure, configuration files, and core utilities (NRAG-001 to NRAG-007). Committed changes.
 
 ## 🧠 Notes & Decisions
 - Following execution model defined in `notion_agentic_rag_backlog.md`.

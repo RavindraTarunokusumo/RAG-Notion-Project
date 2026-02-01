@@ -13,14 +13,15 @@
 1. [Project Vision](#project-vision)
 2. [Architecture Overview](#architecture-overview)
 3. [Execution Model](#execution-model)
-4. [Session 1: Project Foundation](#session-1-project-foundation)
-5. [Session 2: Notion Integration & Document Pipeline](#session-2-notion-integration--document-pipeline)
-6. [Session 3: Vector Store & Embeddings](#session-3-vector-store--embeddings)
-7. [Session 4: Planner & Researcher Agents](#session-4-planner--researcher-agents)
-8. [Session 5: Reasoner & Synthesiser Agents](#session-5-reasoner--synthesiser-agents)
-9. [Session 6: Orchestration & Testing](#session-6-orchestration--testing)
-10. [Future Backlog](#future-backlog)
-11. [Technical Debt & Improvements](#technical-debt--improvements)
+4. [Agent Responsibility](#commit-responsibility)
+5. [Session 1: Project Foundation](#session-1-project-foundation)
+6. [Session 2: Notion Integration & Document Pipeline](#session-2-notion-integration--document-pipeline)
+7. [Session 3: Vector Store & Embeddings](#session-3-vector-store--embeddings)
+8. [Session 4: Planner & Researcher Agents](#session-4-planner--researcher-agents)
+9. [Session 5: Reasoner & Synthesiser Agents](#session-5-reasoner--synthesiser-agents)
+10. [Session 6: Orchestration & Testing](#session-6-orchestration--testing)
+11. [Future Backlog](#future-backlog)
+12. [Technical Debt & Improvements](#technical-debt--improvements)
 
 ---
 
@@ -117,9 +118,17 @@ If a session exhausts its token budget before completing all items:
 2. Document progress made and remaining work
 3. Next session begins by completing carryover items first
 
+---
+
+# Agent Responsibility
+
 ### Commit Responsibility
 
-Every finished subtasks (e.g., NRAG-001[Project directory structure created]) should be accompanied with an atomic commit and every finishedd tasks (e.g., NRAG-001) should be pushed to the repository.
+Every finished task (e.g., NRAG-001) should be accompanied with an atomic commit and every finishedd session should be pushed to the repository.
+
+### Ruff Responsibility
+
+Before finishing a task, always run ruff according to the configurations in `pyproject.toml`
 
 ---
 
