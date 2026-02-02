@@ -23,6 +23,7 @@
 | **NRAG-023** | LangGraph Workflow Implementation | P0 | [x] | `src/orchestrator/graph.py` |
 | **NRAG-024** | CLI & Entry Point Implementation | P0 | [x] | `main.py` |
 | **NRAG-025** | End-to-End System Test | P0 | [x] | `tests/test_e2e.py` |
+| **NRAG-026** | Fix Arxiv Metadata & Source Deduplication | P0 | [x] | `src/agents/synthesiser.py`, `src/loaders/arxiv_loader.py` |
 
 ---
 

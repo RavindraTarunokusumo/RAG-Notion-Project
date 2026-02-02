@@ -63,19 +63,20 @@ def synthesiser_node(state: AgentState) -> dict:
         logger.info("Synthesiser completed generation")
         
         # Extract sources from retrieved docs
-        sources = [
-            {"source": d.metadata.get("source"), "title": d.metadata.get("title", "Unknown")}
-            for d in state.get("retrieved_docs", [])
-        ]
+        sources = []
+        for d in state.get("retrieved_docs", []):
+            # Try to get title from "title" (our sanitized) or "Title" (raw Arxiv)
+            title = d.metadata.get("title") or d.metadata.get("Title") or "Unknown"
+            source_type = d.metadata.get("source", "Unknown")
+            sources.append({"source": source_type, "title": title})
         
         # Deduplicate sources based on title
         unique_sources = []
         seen = set()
         for s in sources:
-            # Use title as the unique key, fallback to source if title is Unknown
-            key = s["title"] if s["title"] != "Unknown" else s["source"]
-            if key not in seen:
-                seen.add(key)
+            unique_key = f"{s['source']}:{s['title']}"
+            if unique_key not in seen:
+                seen.add(unique_key)
                 unique_sources.append(s)
         
         return {
