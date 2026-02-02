@@ -1,4 +1,5 @@
 import logging
+import time
 
 from langchain_core.documents import Document
 from langchain_core.output_parsers import JsonOutputParser
@@ -57,6 +58,9 @@ def researcher_node(state: AgentState) -> dict:
     
     for task in sub_tasks:
         try:
+            # Rate limit mitigation for Trial Tier (10 calls/min)
+            time.sleep(6) 
+            
             # 1. Optimize query
             logger.info(f"Processing task: {task['task']}")
             query_result = chain.invoke({
@@ -66,6 +70,7 @@ def researcher_node(state: AgentState) -> dict:
             
             # 2. Execute Search
             for query in query_result['optimized_queries']:
+                time.sleep(6) # Rate limit mitigation
                 docs = retriever.invoke(query)
                 logger.debug(f"Query '{query}' returned {len(docs)} docs")
                 
