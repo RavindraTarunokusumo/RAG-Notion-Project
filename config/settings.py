@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     chroma_persist_dir: str = "./data/chroma_db"
     collection_name: str = "notion_knowledge_base"
     embedding_batch_size: int = 10
-    embedding_delay: float = 1.0
+    embedding_delay: float = 10.0 # Prevent rate limiting (free tier)
 
     model_config = SettingsConfigDict(extra="ignore", env_file=".env", env_file_encoding="utf-8")
     
