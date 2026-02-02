@@ -103,7 +103,10 @@ class DocumentPipeline:
             if not entry.notes and not entry.title:
                 continue
                 
-            content = f"TITLE: {entry.title}\n\nNOTES:\n{entry.notes}"
+            # Flatten keywords for content inclusion
+            kw_str = ", ".join(entry.keywords) if isinstance(entry.keywords, list) else str(entry.keywords)
+            
+            content = f"TITLE: {entry.title}\nTOPIC: {entry.topic}\nKEYWORDS: {kw_str}\n\nNOTES:\n{entry.notes}"
             
             doc = Document(
                 page_content=content,
@@ -111,9 +114,10 @@ class DocumentPipeline:
                     "source": "notion",
                     "notion_id": entry.notion_id,
                     "title": entry.title,
+                    "topic": entry.topic,
+                    "keywords": entry.keywords,
                     "url": entry.source_url,
                     "category": entry.entry_type,
-                    "topic": entry.topic,
                     "created_date": entry.created_date
                 }
             )
