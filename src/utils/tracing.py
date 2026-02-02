@@ -9,10 +9,11 @@ from config.settings import settings
 
 def initialize_tracing():
     """Initialize LangSmith tracing with project settings."""
-    os.environ["LANGSMITH_TRACING"] = str(settings.langsmith_tracing).lower()
-    os.environ["LANGSMITH_API_KEY"] = settings.langsmith_api_key
-    os.environ["LANGSMITH_PROJECT"] = settings.langsmith_project
-    os.environ["LANGSMITH_ENDPOINT"] = settings.langsmith_endpoint
+    # We set strict LANGCHAIN_ variables to ensure compatibility with all SDK versions
+    os.environ["LANGCHAIN_TRACING_V2"] = str(settings.langsmith_tracing).lower()
+    os.environ["LANGCHAIN_API_KEY"] = settings.langsmith_api_key
+    os.environ["LANGCHAIN_PROJECT"] = settings.langsmith_project
+    os.environ["LANGCHAIN_ENDPOINT"] = settings.langsmith_endpoint
 
 def agent_trace(
     agent_name: str,

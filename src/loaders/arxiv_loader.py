@@ -94,6 +94,7 @@ class ArxivPaperLoader:
             # Notion metadata takes precedence for user-defined categorization
             paper_doc.metadata.update({
                 "source": "arxiv",
+                "title": paper_doc.metadata.get("Title", entry.title),
                 "arxiv_id": entry.arxiv_id,
                 "notion_id": entry.notion_id,
                 "notion_title": entry.title,

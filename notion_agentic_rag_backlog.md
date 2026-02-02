@@ -3308,7 +3308,7 @@ class A2AToolClient:
 | NRAG-032 | Gradio Alternative UI | 15,000 | P3 |
 | NRAG-033 | Response Streaming | 12,000 | P2 |
 
-### Epic: Advanced Features
+### Epic: Advanced Features (Expandable)
 
 | ID | Item | Token Estimate | Priority |
 |----|------|----------------|----------|
@@ -3362,7 +3362,7 @@ class A2AToolClient:
 
 | Epic | Estimated Tokens |
 |------|------------------|
-| A2A Protocol | 62,000 |
+| A2A Protocol | 113,000 |
 | User Interface | 47,000 |
 | Advanced Features | 103,000 |
 | Deployment | 42,000 |
@@ -3371,6 +3371,6 @@ class A2AToolClient:
 
 ---
 
-*Last Updated: February 1, 2026*  
+*Last Updated: February 2, 2026*  
 *Backlog Owner: Arthur*  
-*Execution Model: AI Agent (Token-Based)*
+*Execution Model: AI Agent (Session-Based)*

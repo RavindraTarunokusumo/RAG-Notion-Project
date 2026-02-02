@@ -96,22 +96,6 @@ class VectorStoreManager:
         
     def similarity_search(self, query: str, k: int = 5):
         return self.vectorstore.similarity_search(query, k=k)
-        
-    def clear(self):
-        """Clear the vector store."""
-        try:
-            logger.info("Clearing Vector Store...")
-            # For Chroma, we can delete the collection or get all IDs and delete them
-            # Deleting collection and recreating is cleaner
-            self.vectorstore.delete_collection()
-            self.vectorstore = Chroma(
-                collection_name=self.collection_name,
-                embedding_function=self.embeddings,
-                persist_directory=self.persist_directory
-            )
-            logger.info("Vector Store cleared.")
-        except Exception as e:
-            logger.error(f"Failed to clear vector store: {e}")
 
 # Singleton instance
 _vector_store_manager: VectorStoreManager | None = None

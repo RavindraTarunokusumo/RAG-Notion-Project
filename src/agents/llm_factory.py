@@ -44,7 +44,7 @@ def get_agent_llm(agent_type: AgentType) -> ChatCohere:
     Model sizes:
     - Planner: command-r-08-2024 (35B) - Fast task decomposition
     - Researcher: command-r-08-2024 (35B) - Efficient query handling
-    - Reasoner: command-r-plus-08-2024 (104B) - Deep analysis
+    - Reasoner: command-a-reasoning-08-2025 (111B) - Deep analysis (Flagship)
     - Synthesiser: command-r-plus-08-2024 (104B) - Quality generation
     """
     if agent_type not in AGENT_CONFIGS:
