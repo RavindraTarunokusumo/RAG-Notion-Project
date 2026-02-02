@@ -21,7 +21,11 @@ def run_ingestion(rebuild: bool = False):
     
     logger.info("Starting ingestion process...")
     if rebuild:
-        logger.info("Rebuild flag is set (clearing not implemented yet, proceeding with append).")
+        logger.info("Rebuild flag is set. Clearing existing vector store...")
+        try:
+            get_vector_store().clear()
+        except AttributeError:
+             logger.warning("Vector store clear method not implemented or accessible.")
     
     pipeline = DocumentPipeline()
     try:
