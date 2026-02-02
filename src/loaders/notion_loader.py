@@ -15,6 +15,7 @@ class NotionEntry:
     notion_id: str
     title: str
     topic: str
+    keywords: list[str]
     source_url: str
     arxiv_id: str | None
     entry_type: str
@@ -77,12 +78,13 @@ class NotionKnowledgeBaseLoader:
             
             notion_id = metadata.get("id", "")
             title = metadata.get("title", "Untitled")
+            topic = metadata.get("topics", "")
+            keywords = metadata.get("keywords", [])
             url = metadata.get("url", "") 
             created_date = metadata.get("publication date", "")
             if created_date:
                 created_date = created_date.get("start", "")
-            topic = metadata.get("topics")
-            entry_type = metadata.get("type")
+            entry_type = metadata.get("type", "Unknown")
             notes = metadata.get("notes", "")
             
             # Attempt to extract Arxiv ID
@@ -92,6 +94,7 @@ class NotionKnowledgeBaseLoader:
                 notion_id=notion_id,
                 title=title,
                 topic=topic,
+                keywords=keywords,
                 source_url=url,
                 arxiv_id=arxiv_id,
                 entry_type=entry_type,
