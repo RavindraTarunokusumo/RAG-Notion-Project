@@ -1,5 +1,6 @@
 from src.loaders.notion_loader import NotionKnowledgeBaseLoader
 
+
 def test_notion_knowledge_base_loader():
     loader = NotionKnowledgeBaseLoader()
     entries = loader.load_entries(use_cache=False)
