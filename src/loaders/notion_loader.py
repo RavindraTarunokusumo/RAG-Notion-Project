@@ -20,7 +20,7 @@ class NotionEntry:
     arxiv_id: str | None
     entry_type: str
     notes: str
-    created_date: str
+    publication_date: str
     
 class NotionKnowledgeBaseLoader:
     """
@@ -81,9 +81,9 @@ class NotionKnowledgeBaseLoader:
             topic = metadata.get("topics", "")
             keywords = metadata.get("keywords", [])
             url = metadata.get("url", "") 
-            created_date = metadata.get("publication date", "")
-            if created_date:
-                created_date = created_date.get("start", "")
+            publication_date = metadata.get("publication date", "")
+            if publication_date:
+                publication_date = publication_date.get("start", "")
             entry_type = metadata.get("type", "Unknown")
             notes = metadata.get("notes", "")
             
@@ -99,7 +99,7 @@ class NotionKnowledgeBaseLoader:
                 arxiv_id=arxiv_id,
                 entry_type=entry_type,
                 notes=notes,
-                created_date=created_date,
+                publication_date=publication_date,
             )
             
         except Exception as e:

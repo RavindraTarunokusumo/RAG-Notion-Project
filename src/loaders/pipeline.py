@@ -118,7 +118,7 @@ class DocumentPipeline:
                     "keywords": entry.keywords,
                     "url": entry.source_url,
                     "category": entry.entry_type,
-                    "created_date": entry.created_date
+                    "publication_date": entry.publication_date
                 }
             )
             docs.append(doc)

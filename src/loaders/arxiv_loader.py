@@ -103,7 +103,8 @@ class ArxivPaperLoader:
                 "topic": entry.topic,
                 "keywords": entry.keywords,
                 "user_notes": entry.notes,
-                "notion_url": entry.source_url
+                "notion_url": entry.source_url,
+                "publication_date": entry.publication_date
             })
             
             # Prepare content enrichment strings
