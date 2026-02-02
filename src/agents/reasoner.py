@@ -69,11 +69,11 @@ def reasoner_node(state: AgentState) -> dict:
             "documents": doc_str
         })
         
-        logger.info(f"Reasoner completed analysis with {len(result['analysis'])} items")
+        logger.info(f"Reasoner completed analysis with {len(result.get('analysis', []))} items")
         
         return {
-            "analysis": result["analysis"],
-            "overall_assessment": result["overall_assessment"],
+            "analysis": result.get("analysis", []),
+            "overall_assessment": result.get("overall_assessment", "No overall assessment provided by the model."),
             "current_agent": "reasoner"
         }
         
