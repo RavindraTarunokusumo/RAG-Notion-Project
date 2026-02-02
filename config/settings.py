@@ -5,7 +5,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class CohereModelConfig(BaseModel):
     planner_model: str = "command-r-08-2024"
     researcher_model: str = "command-r-08-2024"
-    reasoner_model: str = "command-a-reasoning-08-2025"
+    reasoner_model: str = "command-r-plus-08-2024"
     synthesiser_model: str = "command-r-plus-08-2024"
     
     planner_temperature: float = 0.0

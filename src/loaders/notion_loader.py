@@ -81,9 +81,15 @@ class NotionKnowledgeBaseLoader:
             topic = metadata.get("topics", "")
             keywords = metadata.get("keywords", [])
             url = metadata.get("url", "") 
-            publication_date = metadata.get("publication date", "")
-            if publication_date:
-                publication_date = publication_date.get("start", "")
+            
+            # Extract date with fallback for case-sensitivity
+            pub_date_obj = metadata.get("publication date") or metadata.get("Publication Date")
+            publication_date = ""
+            if pub_date_obj and isinstance(pub_date_obj, dict):
+                publication_date = pub_date_obj.get("start", "")
+            elif isinstance(pub_date_obj, str):
+                publication_date = pub_date_obj
+
             entry_type = metadata.get("type", "Unknown")
             notes = metadata.get("notes", "")
             
