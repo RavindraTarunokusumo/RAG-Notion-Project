@@ -68,12 +68,14 @@ def synthesiser_node(state: AgentState) -> dict:
             for d in state.get("retrieved_docs", [])
         ]
         
-        # Deduplicate sources based on source string
+        # Deduplicate sources based on title
         unique_sources = []
         seen = set()
         for s in sources:
-            if s["source"] not in seen:
-                seen.add(s["source"])
+            # Use title as the unique key, fallback to source if title is Unknown
+            key = s["title"] if s["title"] != "Unknown" else s["source"]
+            if key not in seen:
+                seen.add(key)
                 unique_sources.append(s)
         
         return {
