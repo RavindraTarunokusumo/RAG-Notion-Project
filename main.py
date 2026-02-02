@@ -84,7 +84,7 @@ def test_connection():
     
     # 1. LangSmith
     try:
-        print(f"🔹 LangSmith: Checking project '{settings.langchain_project}'...")
+        print(f"🔹 LangSmith: Checking project '{settings.langsmith_project}'...")
         initialize_tracing()
         print("   ✅ Tracing initialized")
     except Exception as e:
