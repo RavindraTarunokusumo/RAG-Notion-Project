@@ -107,18 +107,14 @@ class ArxivPaperLoader:
                 "publication_date": entry.publication_date
             })
             
-            # Prepare content enrichment strings
-            kw_str = ", ".join(entry.keywords) if isinstance(entry.keywords, list) else str(entry.keywords)
-            metadata_header = f"TOPIC: {entry.topic}\nKEYWORDS: {kw_str}"
-
             # If we don't want full text, we might just want abstract + notes
             if not include_full_text:
                 # Use abstract as content if full text not requested
                 abstract = paper_doc.metadata.get("Summary", "")
-                paper_doc.page_content = f"ABSTRACT:\n{abstract}\n\n{metadata_header}\n\nUSER NOTES:\n{entry.notes}"
+                paper_doc.page_content = f"ABSTRACT:\n{abstract}\n\nUSER NOTES:\n{entry.notes}"
             else:
                  # Prepend notes to content
-                 paper_doc.page_content = f"{metadata_header}\n\nUSER NOTES:\n{entry.notes}\n\nPAPER CONTENT:\n{paper_doc.page_content}"
+                 paper_doc.page_content = f"USER NOTES:\n{entry.notes}\n\nPAPER CONTENT:\n{paper_doc.page_content}"
             
             return paper_doc
             
