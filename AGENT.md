@@ -5,6 +5,7 @@
 > **Current Session:** Session 6 (Orchestration, CLI & Final Testing)
 
 ## 📋 Instructions for Agent
+
 1. **Update this file** at the start and end of every session.
 2. **Mark tasks** as `[x]` when completed and `[ ]` when pending.
 3. **Log changes** in the "Change Log" section with commit context if available.
@@ -16,6 +17,7 @@
 ---
 
 ## 🚀 Session 6: Orchestration, CLI & Final Testing
+
 **Goal:** Wire agents with LangGraph, implement CLI, and verify E2E with LangSmith
 **Budget:** ~80,000 tokens
 
@@ -30,6 +32,7 @@
 ---
 
 ## 🏁 Session 5: Reasoner & Synthesiser Agents (Completed)
+
 **Goal:** Implement the analytical and generation agents to complete the reasoning chain
 **Budget:** ~80,000 tokens
 
@@ -42,6 +45,7 @@
 ---
 
 ## 🏁 Session 4: Planner & Researcher Agents (Completed)
+
 **Goal:** Implement the first two agents in the pipeline (Planner & Researcher)
 **Budget:** ~80,000 tokens
 
@@ -55,6 +59,7 @@
 ---
 
 ## 🏁 Session 3: Vector Store & Embeddings (Completed)
+
 **Goal:** Cohere embeddings, ChromaDB setup, and retrieval with reranking
 **Budget:** ~80,000 tokens
 
@@ -68,6 +73,7 @@
 ---
 
 ## 🏁 Session 2: Notion Integration & Document Pipeline (Completed)
+
 **Goal:** Notion document loading, Arxiv paper fetching, and metadata merging
 **Budget:** ~80,000 tokens
 
@@ -81,6 +87,7 @@
 ---
 
 ## 🏁 Session 1: Project Foundation (Completed)
+
 **Goal:** Initialize project structure, environment, and core utilities.
 **Budget:** ~80,000 tokens
 
@@ -97,6 +104,7 @@
 ---
 
 ## 🔮 Future Sessions (Overview)
+
 - **Session 3:** Vector Store & Embeddings (NRAG-012 to NRAG-015)
 - **Session 4:** Planner & Researcher Agents (NRAG-016 to NRAG-017+)
 - **Session 5:** Reasoner & Synthesiser Agents
@@ -105,6 +113,7 @@
 ---
 
 ## 📝 Change Log
+
 - **[2026-02-01]** Initialized `AGENT.md` and populated Session 1 backlog items.
 - **[2026-02-01]** Switched to **uv** for dependency management. Updated `notion_agentic_rag_backlog.md`.
 - **[2026-02-01]** Initialized `uv` project and installed all dependencies (NRAG-002).
@@ -113,6 +122,7 @@
 - **[2026-02-02]** Implemented monkeypatch in `src/agents/llm_factory.py` to handle Cohere V2 "Reasoning" responses (`ThinkingAssistantMessageResponseContentItem`), fixing a crash in `langchain-cohere` v0.4.6. Enriched document ingestion with topic/keyword headers and improved publication date extraction.
 
 ## 🧠 Notes & Decisions
+
 - Following execution model defined in `notion_agentic_rag_backlog.md`.
 - Using **uv** for dependency management as per revised NRAG-002.
 - LangGraph/LangChain/Cohere stack integration.
@@ -120,4 +130,5 @@
 - **[2026-02-01]** Verified Python 3.14 compatibility: Core libraries (LangChain, Pydantic v2) are supported. ChromaDB may require build tools if wheels aren't available for Windows yet. Proceeding with `^3.11` constraint which includes 3.14.
 
 ## ⚠️ Known Issues / Blockers
+
 - **[x] [2026-02-01] Pydantic Settings Validation Error**: `langchain_endpoint` was missing in `Settings` model. Fixed in `config/settings.py`.
