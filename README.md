@@ -15,7 +15,7 @@ Asks an LLM team to research your question:
 
 **Requirements**: Python 3.11+
 
-1. Clone and install dependencies:
+### Clone and install dependencies:
 
 ```bash
 git clone <repo-url>
@@ -25,13 +25,13 @@ pip install -r requirements.txt
 uv sync
 ```
 
-1. Create `.env` from template:
+### Create `.env` from template:
 
 ```bash
 cp .env.example .env
 ```
 
-1. Add your API keys:
+### Add your API keys:
 
 ```env
 COHERE_API_KEY=your_key
@@ -44,13 +44,12 @@ LANGCHAIN_TRACING_V2=true
 LANGCHAIN_PROJECT=your_project_name
 LANGCHAIN_ENDPOINT=your_region 
 # EU: https://eu.api.smith.langchain.com US: https://us.api.smith.langchain.com
-
 ```
 
-1. Ingest your knowledge base:
+### Ingest your knowledge base:
 
 ```bash
-uv run python -m src.ingest
+uv run python main.py --ingest
 ```
 
 ## Notion KB Structure
@@ -59,12 +58,22 @@ uv run python -m src.ingest
 
 | Title | Topic | Keywords | URL | Type | Publication Date | Notes |
 
-Otherwise, modify the file to match your own.
+Otherwise, modify `notion_loader.py:73` and `arxiv_loader.py:96` to match your own.
 
 ## Usage
 
 ```bash
+# Query
 uv run python main.py "Tell me about my knowledge base."
+
+# Test connection
+uv run python main.py --test-conn
+
+# Rebuild vector store
+uv run python main.py --ingest --ingest
+
+# Debugging
+uv run python main.py "Tell me about my knowledge base." --verbose
 ```
 
 The system will plan, retrieve, analyze, and generate an answer with sources.
