@@ -2,7 +2,6 @@ import logging
 
 from src.loaders.pipeline import DocumentPipeline
 from src.rag.vectorstore import get_vector_store
-from src.utils.tracing import initialize_tracing
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -17,7 +16,6 @@ def run_ingestion(rebuild: bool = False):
     Args:
         rebuild (bool): If True, clears the vector store before ingestion.
     """
-    initialize_tracing()
     
     logger.info("Starting ingestion process...")
     if rebuild:
