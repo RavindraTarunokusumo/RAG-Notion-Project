@@ -78,7 +78,7 @@ class NotionKnowledgeBaseLoader:
             
             notion_id = metadata.get("id", "")
             title = metadata.get("title", "Untitled")
-            topic = metadata.get("topics", "")
+            topic = metadata.get("topic", "")
             keywords = metadata.get("keywords", [])
             url = metadata.get("url", "") 
             

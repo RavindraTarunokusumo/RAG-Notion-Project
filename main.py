@@ -82,7 +82,7 @@ def test_connection():
     """Verifies connections to external services."""
     print("Testing external connections...")
     
-    # 1. LangSmith
+    # 1. Tracing (LangSmith) - Optional if API keys are set
     try:
         print(f"🔹 LangSmith: Checking project '{settings.langsmith_project}'...")
         initialize_tracing()
