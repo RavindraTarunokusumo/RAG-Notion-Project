@@ -25,13 +25,13 @@ pip install -r requirements.txt
 uv sync
 ```
 
-2. Create `.env` from template:
+1. Create `.env` from template:
 
 ```bash
 cp .env.example .env
 ```
 
-3. Add your API keys:
+1. Add your API keys:
 
 ```env
 COHERE_API_KEY=your_key
@@ -47,7 +47,7 @@ LANGCHAIN_ENDPOINT=your_region
 
 ```
 
-4. Ingest your knowledge base:
+1. Ingest your knowledge base:
 
 ```bash
 uv run python -m src.ingest
