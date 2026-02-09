@@ -150,7 +150,6 @@ def process_query_streaming(prompt: str):
             "synthesiser": "✍️",
         }
 
-        current_agent = None
         final_result = None
 
         # Use stream mode to get intermediate updates
@@ -158,7 +157,6 @@ def process_query_streaming(prompt: str):
             # Event is a dict with node name as key
             for node_name, node_output in event.items():
                 if node_name in agent_emojis:
-                    current_agent = node_name
                     emoji = agent_emojis[node_name]
                     yield {
                         "type": "status",
@@ -512,8 +510,7 @@ def main():
 
                     # Display sources
                     if final_sources:
-                        with sources_container:
-                            with st.expander(
+                        with sources_container, st.expander(
                                 f"📚 Sources ({len(final_sources)})"
                             ):
                                 for i, source in enumerate(final_sources):
@@ -555,7 +552,7 @@ def main():
 
                 # Display sources
                 if final_sources:
-                    with st.expander(
+                    with sources_container, st.expander(
                         f"📚 Sources ({len(final_sources)})"
                     ):
                         for i, source in enumerate(final_sources):
