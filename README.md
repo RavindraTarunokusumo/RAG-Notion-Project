@@ -62,6 +62,22 @@ Otherwise, modify `notion_loader.py:73` and `arxiv_loader.py:96` to match your o
 
 ## Usage
 
+### Web Interface (Recommended)
+
+Launch the Streamlit chat interface:
+
+```bash
+streamlit run app.py
+```
+
+The web interface provides:
+- 💬 Interactive chat with message history
+- 📚 Rich source display with citations
+- 🔄 Real-time agent pipeline status
+- 🎨 User-friendly UI
+
+### Command Line Interface
+
 ```bash
 # Query
 uv run python main.py "Tell me about my knowledge base."
@@ -70,7 +86,7 @@ uv run python main.py "Tell me about my knowledge base."
 uv run python main.py --test-conn
 
 # Rebuild vector store
-uv run python main.py --ingest --ingest
+uv run python main.py --ingest --rebuild
 
 # Debugging
 uv run python main.py "Tell me about my knowledge base." --verbose
@@ -84,6 +100,7 @@ The system will plan, retrieve, analyze, and generate an answer with sources.
 - **Embeddings**: Cohere embed-english-v3.0
 - **Vector Store**: ChromaDB
 - **Orchestration**: LangGraph
+- **UI**: Streamlit (Web Interface)
 - **Tracing**: LangSmith (optional)
 
 ## Project Structure
