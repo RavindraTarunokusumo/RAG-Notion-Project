@@ -58,6 +58,9 @@ cover/
 *.mo
 *.pot
 
+# Agents
+copilot-instructions.md
+
 # Django stuff:
 *.log
 local_settings.py
