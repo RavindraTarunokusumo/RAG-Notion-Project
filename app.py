@@ -121,15 +121,6 @@ def display_source_card(source: dict, index: int):
         or source.get("arxiv_url")
         or source.get("notion_url")
     )
-
-    # Source icon
-    icon_map = {
-        "arxiv": "🔬",
-        "notion": "📝",
-        "pdf": "📄",
-        "web": "🌐"
-    }
-    icon = icon_map.get(source_type.lower(), "📄")
     
     # Source type badge with color
     badge_map = {
@@ -162,12 +153,11 @@ def display_source_card(source: dict, index: int):
             metadata_parts = []
             
             # Authors (for papers)
-            if authors := source.get("authors"):
-                if isinstance(authors, list):
-                    author_text = ", ".join(authors[:3])
-                    if len(authors) > 3:
-                        author_text += " et al."
-                    metadata_parts.append(f"👤 {author_text}")
+            if (authors := source.get("authors")) and isinstance(authors, list):
+                author_text = ", ".join(authors[:3])
+                if len(authors) > 3:
+                    author_text += " et al."
+                metadata_parts.append(f"👤 {author_text}")
             
             # Publication date
             if pub_date := source.get("published"):
@@ -181,7 +171,7 @@ def display_source_card(source: dict, index: int):
                         # Try to parse and format nicely
                         dt = datetime.fromisoformat(pub_date.replace("Z", ""))
                         pub_date = dt.strftime("%Y-%m-%d")
-                    except:
+                    except ValueError:
                         pass
                 metadata_parts.append(f"📅 {pub_date}")
             
@@ -223,12 +213,83 @@ def display_source_card(source: dict, index: int):
                 st.caption(f"🔗 ArXiv ID: `{arxiv_id}`")
             
             # Keywords (for Notion)
-            if keywords := source.get("keywords"):
-                if isinstance(keywords, list) and keywords:
-                    keyword_text = ", ".join(keywords[:5])
-                    if len(keywords) > 5:
-                        keyword_text += f" (+{len(keywords)-5} more)"
-                    st.caption(f"🔖 Keywords: {keyword_text}")
+            if (keywords := source.get("keywords")) and isinstance(keywords, list) and keywords:
+                keyword_text = ", ".join(keywords[:5])
+                if len(keywords) > 5:
+                    keyword_text += f" (+{len(keywords)-5} more)"
+                st.caption(f"🔖 Keywords: {keyword_text}")
+
+
+def render_workflow_progress(current_agent: str, completed_agents: list, agent_outcomes: dict):
+    """
+    Render a visual progress tracking sidebar.
+    Should be called within a st.sidebar context or container.
+    """
+    st.markdown("### 🚦 Workflow Progress")
+    
+    agents = [
+        {"id": "planner", "label": "Planning", "icon": "🎯"},
+        {"id": "researcher", "label": "Researching", "icon": "🔍"},
+        {"id": "reasoner", "label": "Reasoning", "icon": "🧠"},
+        {"id": "synthesiser", "label": "Synthesising", "icon": "✍️"}
+    ]
+    
+    for agent in agents:
+        agent_id = agent["id"]
+        is_completed = agent_id in completed_agents
+        is_current = agent_id == current_agent
+        
+        # Determine visuals
+        if is_completed:
+            status_icon = "✅"
+            font_weight = "normal"
+            opacity = "1.0"
+            color = "green"
+        elif is_current:
+            status_icon = "🔄"
+            font_weight = "bold"
+            opacity = "1.0"
+            color = "blue"
+        else:
+            status_icon = "⚪"
+            font_weight = "normal"
+            opacity = "0.5"
+            color = "gray"
+            
+        # Outcome text (if available)
+        outcome = agent_outcomes.get(agent_id, "")
+        
+        # Render row
+        st.markdown(
+            f"""
+            <div style="display: flex; align-items: center; margin-bottom: 8px; opacity: {opacity}">
+                <div style="font-size: 1.2em; margin-right: 8px;">{status_icon}</div>
+                <div style="flex-grow: 1;">
+                    <div style="font-weight: {font_weight}; color: {color}">
+                        {agent['icon']} {agent['label']}
+                    </div>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        
+        if outcome:
+             st.caption(f"└ {outcome}")
+             
+    if "synthesiser" in completed_agents:
+        st.success("✨ Process Complete!")
+
+
+def _get_agent_emoji(agent: str) -> str:
+    emojis = {
+        "planner": "🎯",
+        "researcher": "🔍",
+        "reasoner": "🧠",
+        "synthesiser": "✍️",
+        "end": "🏁"
+    }
+    return emojis.get(agent, "🤖")
 
 
 def process_query_streaming(prompt: str):
@@ -250,30 +311,65 @@ def process_query_streaming(prompt: str):
         "error": None,
         "current_agent": "start",
     }
+    
+    # Track progress locally
+    completed_agents = []
+    agent_outcomes = {}
+    
+    # 1. Start with Planner
+    yield {
+        "type": "progress",
+        "current_agent": "planner",
+        "completed_agents": [],
+        "agent_outcomes": {},
+        "message": "🎯 Planner is analyzing your query..."
+    }
 
     try:
-        # Stream events from the graph
-        agent_emojis = {
-            "planner": "🎯",
-            "researcher": "🔍",
-            "reasoner": "🧠",
-            "synthesiser": "✍️",
-        }
-
         final_result = None
 
         # Use stream mode to get intermediate updates
         for event in st.session_state.graph.stream(initial_state):
             # Event is a dict with node name as key
             for node_name, node_output in event.items():
-                if node_name in agent_emojis:
-                    emoji = agent_emojis[node_name]
-                    yield {
-                        "type": "status",
-                        "agent": node_name,
-                        "emoji": emoji,
-                        "message": f"{emoji} {node_name.title()} working...",
-                    }
+                
+                # Mark current as completed
+                if node_name not in completed_agents:
+                    completed_agents.append(node_name)
+                
+                # Extract interesting stats/outcomes
+                outcome = ""
+                if node_name == "planner":
+                    sub_tasks = node_output.get("sub_tasks", [])
+                    outcome = f"Created {len(sub_tasks)} sub-tasks"
+                elif node_name == "researcher":
+                    docs = node_output.get("retrieved_docs", [])
+                    outcome = f"Found {len(docs)} documents"
+                elif node_name == "reasoner":
+                    analysis = node_output.get("analysis", [])
+                    outcome = f"Analyzed {len(analysis)} items"
+                elif node_name == "synthesiser":
+                    outcome = "Drafted response"
+                
+                agent_outcomes[node_name] = outcome
+                
+                # Determine next agent
+                next_agent = "end"
+                if node_name == "planner":
+                    next_agent = "researcher"
+                elif node_name == "researcher":
+                    next_agent = "reasoner"
+                elif node_name == "reasoner":
+                    next_agent = "synthesiser"
+                
+                # Yield progress update
+                yield {
+                    "type": "progress",
+                    "current_agent": next_agent,
+                    "completed_agents": completed_agents.copy(),
+                    "agent_outcomes": agent_outcomes.copy(),
+                    "message": f"{_get_agent_emoji(next_agent)} {next_agent.title()} running..." if next_agent != "end" else "✨ Finalizing..."
+                }
 
                 # Store final state
                 final_result = node_output
@@ -571,7 +667,7 @@ def main():
                     
                     with filter_col1:
                         # Get unique source types
-                        source_types = list(set(s.get("source", "unknown").lower() for s in sources))
+                        source_types = list({s.get("source", "unknown").lower() for s in sources})
                         source_types.insert(0, "All")
                         
                         selected_type = st.selectbox(
@@ -637,20 +733,33 @@ def main():
                 status_container = st.container()
                 response_placeholder = st.empty()
                 sources_container = st.container()
+                
+                # Sidebar placeholder for progress
+                progress_placeholder = st.sidebar.empty()
 
                 final_message = ""
                 final_sources = []
 
                 try:
                     for update in process_query_streaming(prompt):
-                        if update["type"] == "status":
-                            # Show which agent is currently working
+                        if update["type"] == "progress":
+                            # Update sidebar
+                            with progress_placeholder.container():
+                                render_workflow_progress(
+                                    update["current_agent"], 
+                                    update["completed_agents"],
+                                    update["agent_outcomes"]
+                                )
+                            
+                            # Update status message
                             with status_container:
-                                st.caption(update["message"])
+                                st.info(update["message"])
 
                         elif update["type"] == "complete":
                             # Clear status and show final answer
                             status_container.empty()
+                            # Do not clear sidebar progress so user can see what happened
+                            
                             final_message = update["message"]
                             final_sources = update["sources"]
 
@@ -675,51 +784,50 @@ def main():
 
                     # Display sources
                     if final_sources:
-                        with sources_container:
-                            with st.expander(
-                                f"📚 Sources ({len(final_sources)})", expanded=True
-                            ):
-                                # Source filtering
-                                filter_col1, filter_col2 = st.columns([1, 1])
+                        with sources_container, st.expander(
+                            f"📚 Sources ({len(final_sources)})", expanded=True
+                        ):
+                            # Source filtering
+                            filter_col1, filter_col2 = st.columns([1, 1])
+                            
+                            with filter_col1:
+                                source_types = list({s.get("source", "unknown").lower() for s in final_sources})
+                                source_types.insert(0, "All")
+                                selected_type = st.selectbox(
+                                    "Filter by type:",
+                                    source_types,
+                                    key="stream_filter_type"
+                                )
+                            
+                            with filter_col2:
+                                search_term = st.text_input(
+                                    "Search sources:",
+                                    key="stream_search"
+                                )
+                            
+                            st.divider()
                                 
-                                with filter_col1:
-                                    source_types = list(set(s.get("source", "unknown").lower() for s in final_sources))
-                                    source_types.insert(0, "All")
-                                    selected_type = st.selectbox(
-                                        "Filter by type:",
-                                        source_types,
-                                        key="stream_filter_type"
-                                    )
-                                
-                                with filter_col2:
-                                    search_term = st.text_input(
-                                        "Search sources:",
-                                        key="stream_search"
-                                    )
-                                
-                                st.divider()
-                                
-                                # Apply filters
-                                filtered = final_sources
-                                if selected_type != "All":
-                                    filtered = [s for s in filtered if s.get("source", "").lower() == selected_type]
-                                if search_term:
-                                    search_lower = search_term.lower()
-                                    filtered = [
-                                        s for s in filtered
-                                        if search_lower in s.get("title", "").lower()
-                                        or search_lower in str(s.get("keywords", "")).lower()
-                                        or search_lower in str(s.get("topic", "")).lower()
-                                    ]
-                                
-                                if filtered:
-                                    for i, source in enumerate(filtered):
-                                        original_idx = final_sources.index(source)
-                                        display_source_card(source, original_idx)
-                                        if i < len(filtered) - 1:
-                                            st.divider()
-                                else:
-                                    st.info("No sources match your filter criteria.")
+                            # Apply filters
+                            filtered = final_sources
+                            if selected_type != "All":
+                                filtered = [s for s in filtered if s.get("source", "").lower() == selected_type]
+                            if search_term:
+                                search_lower = search_term.lower()
+                                filtered = [
+                                    s for s in filtered
+                                    if search_lower in s.get("title", "").lower()
+                                    or search_lower in str(s.get("keywords", "")).lower()
+                                    or search_lower in str(s.get("topic", "")).lower()
+                                ]
+                            
+                            if filtered:
+                                for i, source in enumerate(filtered):
+                                    original_idx = final_sources.index(source)
+                                    display_source_card(source, original_idx)
+                                    if i < len(filtered) - 1:
+                                        st.divider()
+                            else:
+                                st.info("No sources match your filter criteria.")
 
                 except Exception as e:
                     logger.exception("Error during streaming")
@@ -762,7 +870,7 @@ def main():
                         filter_col1, filter_col2 = st.columns([1, 1])
                         
                         with filter_col1:
-                            source_types = list(set(s.get("source", "unknown").lower() for s in final_sources))
+                            source_types = list({s.get("source", "unknown").lower() for s in final_sources})
                             source_types.insert(0, "All")
                             selected_type = st.selectbox(
                                 "Filter by type:",
