@@ -16,10 +16,14 @@ def get_synthesiser_prompt():
         GUIDELINES:
         1. Answer the user's original query directly and comprehensively.
         2. Use the provided analysis to structure your response.
-        3. Cite your sources implicitly (e.g., "According to Notion notes...", "Research paper X suggests...").
-        4. If there are conflicting findings, highlight them.
-        5. If information is missing, clearly state what could not be found.
-        6. Format your response in clean Markdown.
+        3. **IMPORTANT: Cite your sources using numbered citations [1], [2], etc.** Place the citation number immediately after the relevant statement.
+        4. Each source should be referenced by its index number from the sources list provided.
+        5. If there are conflicting findings, highlight them with appropriate citations.
+        6. If information is missing, clearly state what could not be found.
+        7. Format your response in clean Markdown.
+        
+        Example:
+        "The transformer architecture revolutionized NLP [1]. Recent work shows attention mechanisms are key [2]."
         """),
         ("user", """
         Original Query: {query}
@@ -30,6 +34,9 @@ def get_synthesiser_prompt():
         {analysis}
         
         Overall Assessment: {assessment}
+        
+        Available Sources:
+        {sources_list}
         """)
     ])
 
@@ -53,22 +60,41 @@ def synthesiser_node(state: AgentState) -> dict:
             for item in analysis
         ])
         
-        final_answer = chain.invoke({
-            "query": query,
-            "reasoning": state.get("planning_reasoning", ""),
-            "analysis": analysis_str,
-            "assessment": state.get("overall_assessment", "")
-        })
-        
-        logger.info("Synthesiser completed generation")
-        
-        # Extract sources from retrieved docs
+        # Extract and enrich sources from retrieved docs
         sources = []
         for d in state.get("retrieved_docs", []):
-            # Try to get title from "title" (our sanitized) or "Title" (raw Arxiv)
-            title = d.metadata.get("title") or d.metadata.get("Title") or "Unknown"
-            source_type = d.metadata.get("source", "Unknown")
-            sources.append({"source": source_type, "title": title})
+            # Extract metadata
+            meta = d.metadata
+            title = meta.get("title") or meta.get("Title") or "Unknown"
+            source_type = meta.get("source", "unknown")
+            
+            # Build enriched source object
+            source = {
+                "source": source_type,
+                "title": title,
+                "url": meta.get("url") or meta.get("notion_url"),
+                "snippet": d.page_content[:300] if d.page_content else None,
+            }
+            
+            # Add source-specific metadata
+            if source_type == "arxiv":
+                source.update({
+                    "arxiv_url": f"https://arxiv.org/abs/{meta.get('arxiv_id')}" if meta.get('arxiv_id') else None,
+                    "arxiv_id": meta.get("arxiv_id"),
+                    "authors": meta.get("Authors", []) if isinstance(meta.get("Authors"), list) else None,
+                    "published": meta.get("Published") or meta.get("publication_date"),
+                    "abstract": meta.get("Summary"),
+                })
+            elif source_type == "notion":
+                source.update({
+                    "notion_url": meta.get("url"),
+                    "topic": meta.get("topic"),
+                    "keywords": meta.get("keywords"),
+                    "published": meta.get("publication_date"),
+                    "category": meta.get("category"),
+                })
+            
+            sources.append(source)
         
         # Deduplicate sources based on title
         unique_sources = []
@@ -78,6 +104,22 @@ def synthesiser_node(state: AgentState) -> dict:
             if unique_key not in seen:
                 seen.add(unique_key)
                 unique_sources.append(s)
+        
+        # Create sources list for prompt
+        sources_list = "\n".join([
+            f"[{i+1}] {s['title']} ({s['source']})"
+            for i, s in enumerate(unique_sources)
+        ])
+        
+        final_answer = chain.invoke({
+            "query": query,
+            "reasoning": state.get("planning_reasoning", ""),
+            "analysis": analysis_str,
+            "assessment": state.get("overall_assessment", ""),
+            "sources_list": sources_list
+        })
+        
+        logger.info("Synthesiser completed generation")
         
         return {
             "final_answer": final_answer,

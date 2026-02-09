@@ -5,6 +5,7 @@ Launch with: streamlit run app.py
 """
 
 import logging
+import re
 from datetime import datetime
 
 import streamlit as st
@@ -49,6 +50,15 @@ st.markdown(
         border: 1px solid #e0e0e0;
         margin: 0.5rem 0;
     }
+    .citation {
+        color: #0066cc;
+        font-weight: 500;
+        text-decoration: none;
+        cursor: pointer;
+    }
+    .citation:hover {
+        text-decoration: underline;
+    }
 </style>
 """,
     unsafe_allow_html=True,
@@ -86,8 +96,24 @@ def initialize_session_state():
         st.session_state.session_manager = get_session_manager()
 
 
+def enhance_citations(text: str) -> str:
+    """
+    Enhance citation markers in text with clickable styling.
+    Converts [1], [2], etc. into styled, anchor-linked citations.
+    """
+    # Find all citation patterns like [1], [2], etc.
+    pattern = r'\[(\d+)\]'
+    
+    def replacer(match):
+        num = match.group(1)
+        # Create an HTML anchor link
+        return f'<a href="#source-{num}" class="citation">[{num}]</a>'
+    
+    return re.sub(pattern, replacer, text)
+
+
 def display_source_card(source: dict, index: int):
-    """Display a rich source card."""
+    """Display a rich source card with enhanced metadata."""
     title = source.get("title", "Untitled")
     source_type = source.get("source", "unknown")
     url = (
@@ -97,28 +123,112 @@ def display_source_card(source: dict, index: int):
     )
 
     # Source icon
-    icon = {"arxiv": "🔬", "notion": "📝"}.get(source_type, "📄")
+    icon_map = {
+        "arxiv": "🔬",
+        "notion": "📝",
+        "pdf": "📄",
+        "web": "🌐"
+    }
+    icon = icon_map.get(source_type.lower(), "📄")
+    
+    # Source type badge with color
+    badge_map = {
+        "arxiv": ("🔬 ArXiv", "#FFE5E5"),
+        "notion": ("📝 Notion", "#E8F4FF"),
+        "pdf": ("📄 PDF", "#F0F0F0"),
+        "web": ("🌐 Web", "#E8FFE8")
+    }
+    badge_text, badge_color = badge_map.get(source_type.lower(), ("📄 Document", "#F5F5F5"))
 
-    # Build display text
-    display_text = f"{icon} **{title}**"
-    if url:
-        display_text = f"{icon} **[{title}]({url})**"
-
-    st.markdown(display_text)
-
-    # Additional metadata
-    metadata_parts = []
-    if authors := source.get("authors"):
-        if isinstance(authors, list):
-            author_text = ", ".join(authors[:3])
-        author_text += " et al." if len(authors) > 3 else ""
-        metadata_parts.append(f"👤 {author_text}")
-
-    if pub_date := source.get("published"):
-        metadata_parts.append(f"📅 {pub_date}")
-
-    if metadata_parts:
-        st.caption(" • ".join(metadata_parts))
+    # Container with styled card and anchor
+    with st.container():
+        # Add anchor ID for citation linking
+        st.markdown(f'<div id="source-{index+1}"></div>', unsafe_allow_html=True)
+        
+        # Citation number and title
+        citation_col, content_col = st.columns([1, 20])
+        
+        with citation_col:
+            st.markdown(f"### [{index+1}]")
+        
+        with content_col:
+            # Title with link
+            if url:
+                st.markdown(f"**[{title}]({url})**")
+            else:
+                st.markdown(f"**{title}**")
+            
+            # Metadata row
+            metadata_parts = []
+            
+            # Authors (for papers)
+            if authors := source.get("authors"):
+                if isinstance(authors, list):
+                    author_text = ", ".join(authors[:3])
+                    if len(authors) > 3:
+                        author_text += " et al."
+                    metadata_parts.append(f"👤 {author_text}")
+            
+            # Publication date
+            if pub_date := source.get("published"):
+                # Clean up date formatting
+                if isinstance(pub_date, str):
+                    # Handle datetime strings
+                    try:
+                        from datetime import datetime
+                        if "T" in pub_date:
+                            pub_date = pub_date.split("T")[0]
+                        # Try to parse and format nicely
+                        dt = datetime.fromisoformat(pub_date.replace("Z", ""))
+                        pub_date = dt.strftime("%Y-%m-%d")
+                    except:
+                        pass
+                metadata_parts.append(f"📅 {pub_date}")
+            
+            # Topic (for Notion)
+            if topic := source.get("topic"):
+                metadata_parts.append(f"🏷️ {topic}")
+            
+            # Category
+            if category := source.get("category"):
+                metadata_parts.append(f"📑 {category}")
+            
+            # Source type badge
+            st.markdown(
+                f'<span style="background-color: {badge_color}; padding: 2px 8px; '
+                f'border-radius: 4px; font-size: 0.85em;">{badge_text}</span>',
+                unsafe_allow_html=True
+            )
+            
+            # Display metadata
+            if metadata_parts:
+                st.caption(" • ".join(metadata_parts))
+            
+            # Snippet/Abstract
+            snippet = source.get("snippet") or source.get("abstract")
+            if snippet:
+                # Clean up snippet
+                snippet = snippet.strip()
+                # Truncate if too long
+                if len(snippet) > 300:
+                    snippet = snippet[:297] + "..."
+                # Remove extra whitespace
+                snippet = " ".join(snippet.split())
+                
+                with st.expander("📝 Preview", expanded=False):
+                    st.caption(snippet)
+            
+            # ArXiv ID (if available)
+            if arxiv_id := source.get("arxiv_id"):
+                st.caption(f"🔗 ArXiv ID: `{arxiv_id}`")
+            
+            # Keywords (for Notion)
+            if keywords := source.get("keywords"):
+                if isinstance(keywords, list) and keywords:
+                    keyword_text = ", ".join(keywords[:5])
+                    if len(keywords) > 5:
+                        keyword_text += f" (+{len(keywords)-5} more)"
+                    st.caption(f"🔖 Keywords: {keyword_text}")
 
 
 def process_query_streaming(prompt: str):
@@ -440,17 +550,72 @@ def main():
     # Display chat messages
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+            # Enhance citations in the message content
+            content = message["content"]
+            if message.get("sources"):
+                # Only enhance citations if there are sources
+                content_html = enhance_citations(content)
+                st.markdown(content_html, unsafe_allow_html=True)
+            else:
+                st.markdown(content)
 
             # Display sources if available
             if message.get("sources"):
+                sources = message["sources"]
+                
                 with st.expander(
-                    f"📚 Sources ({len(message['sources'])})"
+                    f"📚 Sources ({len(sources)})", expanded=False
                 ):
-                    for i, source in enumerate(message["sources"]):
-                        display_source_card(source, i)
-                        if i < len(message["sources"]) - 1:
-                            st.divider()
+                    # Source filtering options
+                    filter_col1, filter_col2 = st.columns([1, 1])
+                    
+                    with filter_col1:
+                        # Get unique source types
+                        source_types = list(set(s.get("source", "unknown").lower() for s in sources))
+                        source_types.insert(0, "All")
+                        
+                        selected_type = st.selectbox(
+                            "Filter by type:",
+                            source_types,
+                            key=f"filter_type_{message.get('timestamp', id(message))}"
+                        )
+                    
+                    with filter_col2:
+                        # Search within sources
+                        search_term = st.text_input(
+                            "Search sources:",
+                            key=f"search_{message.get('timestamp', id(message))}"
+                        )
+                    
+                    st.divider()
+                    
+                    # Filter sources
+                    filtered_sources = sources
+                    if selected_type != "All":
+                        filtered_sources = [
+                            s for s in filtered_sources 
+                            if s.get("source", "").lower() == selected_type
+                        ]
+                    
+                    if search_term:
+                        search_lower = search_term.lower()
+                        filtered_sources = [
+                            s for s in filtered_sources
+                            if search_lower in s.get("title", "").lower()
+                            or search_lower in str(s.get("keywords", "")).lower()
+                            or search_lower in str(s.get("topic", "")).lower()
+                        ]
+                    
+                    # Display filtered sources
+                    if filtered_sources:
+                        for i, source in enumerate(filtered_sources):
+                            # Find original index for citation numbering
+                            original_idx = sources.index(source)
+                            display_source_card(source, original_idx)
+                            if i < len(filtered_sources) - 1:
+                                st.divider()
+                    else:
+                        st.info("No sources match your filter criteria.")
 
     # Chat input
     if prompt := st.chat_input(
@@ -510,13 +675,51 @@ def main():
 
                     # Display sources
                     if final_sources:
-                        with sources_container, st.expander(
-                                f"📚 Sources ({len(final_sources)})"
+                        with sources_container:
+                            with st.expander(
+                                f"📚 Sources ({len(final_sources)})", expanded=True
                             ):
-                                for i, source in enumerate(final_sources):
-                                    display_source_card(source, i)
-                                    if i < len(final_sources) - 1:
-                                        st.divider()
+                                # Source filtering
+                                filter_col1, filter_col2 = st.columns([1, 1])
+                                
+                                with filter_col1:
+                                    source_types = list(set(s.get("source", "unknown").lower() for s in final_sources))
+                                    source_types.insert(0, "All")
+                                    selected_type = st.selectbox(
+                                        "Filter by type:",
+                                        source_types,
+                                        key="stream_filter_type"
+                                    )
+                                
+                                with filter_col2:
+                                    search_term = st.text_input(
+                                        "Search sources:",
+                                        key="stream_search"
+                                    )
+                                
+                                st.divider()
+                                
+                                # Apply filters
+                                filtered = final_sources
+                                if selected_type != "All":
+                                    filtered = [s for s in filtered if s.get("source", "").lower() == selected_type]
+                                if search_term:
+                                    search_lower = search_term.lower()
+                                    filtered = [
+                                        s for s in filtered
+                                        if search_lower in s.get("title", "").lower()
+                                        or search_lower in str(s.get("keywords", "")).lower()
+                                        or search_lower in str(s.get("topic", "")).lower()
+                                    ]
+                                
+                                if filtered:
+                                    for i, source in enumerate(filtered):
+                                        original_idx = final_sources.index(source)
+                                        display_source_card(source, original_idx)
+                                        if i < len(filtered) - 1:
+                                            st.divider()
+                                else:
+                                    st.info("No sources match your filter criteria.")
 
                 except Exception as e:
                     logger.exception("Error during streaming")
@@ -552,13 +755,50 @@ def main():
 
                 # Display sources
                 if final_sources:
-                    with sources_container, st.expander(
-                        f"📚 Sources ({len(final_sources)})"
+                    with st.expander(
+                        f"📚 Sources ({len(final_sources)})", expanded=True
                     ):
-                        for i, source in enumerate(final_sources):
-                            display_source_card(source, i)
-                            if i < len(final_sources) - 1:
-                                st.divider()
+                        # Source filtering
+                        filter_col1, filter_col2 = st.columns([1, 1])
+                        
+                        with filter_col1:
+                            source_types = list(set(s.get("source", "unknown").lower() for s in final_sources))
+                            source_types.insert(0, "All")
+                            selected_type = st.selectbox(
+                                "Filter by type:",
+                                source_types,
+                                key="nonstream_filter_type"
+                            )
+                        
+                        with filter_col2:
+                            search_term = st.text_input(
+                                "Search sources:",
+                                key="nonstream_search"
+                            )
+                        
+                        st.divider()
+                        
+                        # Apply filters
+                        filtered = final_sources
+                        if selected_type != "All":
+                            filtered = [s for s in filtered if s.get("source", "").lower() == selected_type]
+                        if search_term:
+                            search_lower = search_term.lower()
+                            filtered = [
+                                s for s in filtered
+                                if search_lower in s.get("title", "").lower()
+                                or search_lower in str(s.get("keywords", "")).lower()
+                                or search_lower in str(s.get("topic", "")).lower()
+                            ]
+                        
+                        if filtered:
+                            for i, source in enumerate(filtered):
+                                original_idx = final_sources.index(source)
+                                display_source_card(source, original_idx)
+                                if i < len(filtered) - 1:
+                                    st.divider()
+                        else:
+                            st.info("No sources match your filter criteria.")
 
             # Add to message history
             st.session_state.messages.append(
