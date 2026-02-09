@@ -1,6 +1,8 @@
-import cohere
 import logging
+
+import cohere
 from langchain_cohere import ChatCohere
+
 from config.settings import settings
 
 logging.basicConfig(level=logging.INFO)
