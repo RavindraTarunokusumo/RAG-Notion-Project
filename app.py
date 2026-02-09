@@ -505,11 +505,16 @@ def main():
                 else:
                     session_id = st.session_state.current_session_id
 
-                session_mgr.save_session(
+                session_data = session_mgr.save_session(
                     session_id,
                     st.session_state.messages,
                     st.session_state.session_name,
                 )
+                
+                # Update session name in state if it generated one
+                if session_data.get("name"):
+                    st.session_state.session_name = session_data["name"]
+
                 st.success("✓ Session saved!")
                 st.rerun()
 
