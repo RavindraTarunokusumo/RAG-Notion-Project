@@ -16,7 +16,7 @@ def get_synthesiser_prompt():
         GUIDELINES:
         1. Answer the user's original query directly and comprehensively.
         2. Use the provided analysis to structure your response.
-        3. **IMPORTANT: Cite your sources using numbered citations [1], [2], etc.** Place the citation number immediately after the relevant statement.
+        3. **IMPORTANT: Cite your sources using numbered citations [1], [2], etc. Place the citation number immediately after the relevant statement. If a statement is supported by multiple sources, list all relevant citation numbers in separate brackets (e.g., [1][3])**.
         4. Each source should be referenced by its index number from the sources list provided.
         5. If there are conflicting findings, highlight them with appropriate citations.
         6. If information is missing, clearly state what could not be found.
