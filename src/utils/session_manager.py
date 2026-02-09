@@ -8,7 +8,6 @@ import json
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -256,9 +255,9 @@ class SessionManager:
                 content = msg.get("content", "")
 
                 if role == "user":
-                    lines.append(f"## 👤 User")
+                    lines.append("## 👤 User")
                 else:
-                    lines.append(f"## 🤖 Assistant")
+                    lines.append("## 🤖 Assistant")
 
                 lines.append("")
                 lines.append(content)

@@ -67,6 +67,9 @@ def initialize_session_state():
     if "session_name" not in st.session_state:
         st.session_state.session_name = None
 
+    if "streaming_enabled" not in st.session_state:
+        st.session_state.streaming_enabled = True
+
     if "graph" not in st.session_state:
         with st.spinner("Initializing RAG system..."):
             try:
@@ -118,8 +121,87 @@ def display_source_card(source: dict, index: int):
         st.caption(" • ".join(metadata_parts))
 
 
+def process_query_streaming(prompt: str):
+    """
+    Process a user query through the RAG pipeline with streaming.
+    
+    Yields status updates and final result.
+    """
+    initial_state = {
+        "query": prompt,
+        "sub_tasks": [],
+        "planning_reasoning": "",
+        "retrieved_docs": [],
+        "retrieval_metadata": {},
+        "analysis": [],
+        "overall_assessment": "",
+        "final_answer": "",
+        "sources": [],
+        "error": None,
+        "current_agent": "start",
+    }
+
+    try:
+        # Stream events from the graph
+        agent_emojis = {
+            "planner": "🎯",
+            "researcher": "🔍",
+            "reasoner": "🧠",
+            "synthesiser": "✍️",
+        }
+
+        current_agent = None
+        final_result = None
+
+        # Use stream mode to get intermediate updates
+        for event in st.session_state.graph.stream(initial_state):
+            # Event is a dict with node name as key
+            for node_name, node_output in event.items():
+                if node_name in agent_emojis:
+                    current_agent = node_name
+                    emoji = agent_emojis[node_name]
+                    yield {
+                        "type": "status",
+                        "agent": node_name,
+                        "emoji": emoji,
+                        "message": f"{emoji} {node_name.title()} working...",
+                    }
+
+                # Store final state
+                final_result = node_output
+
+        # Check for errors in final result
+        if final_result and final_result.get("error"):
+            yield {
+                "type": "error",
+                "message": f"❌ Pipeline Error: {final_result['error']}",
+                "sources": [],
+            }
+        elif final_result:
+            # Return the final answer
+            yield {
+                "type": "complete",
+                "message": final_result.get("final_answer", ""),
+                "sources": final_result.get("sources", []),
+            }
+        else:
+            yield {
+                "type": "error",
+                "message": "❌ No response from pipeline",
+                "sources": [],
+            }
+
+    except Exception as e:
+        logger.exception("Error processing query")
+        yield {
+            "type": "error",
+            "message": f"❌ System Error: {str(e)}",
+            "sources": [],
+        }
+
+
 def process_query(prompt: str):
-    """Process a user query through the RAG pipeline."""
+    """Process a user query through the RAG pipeline (non-streaming)."""
     initial_state = {
         "query": prompt,
         "sub_tasks": [],
@@ -327,6 +409,19 @@ def main():
 
         st.divider()
 
+        # Settings
+        with st.expander("⚙️ Settings"):
+            streaming = st.checkbox(
+                "Enable Streaming",
+                value=st.session_state.streaming_enabled,
+                help="Stream responses character by character with real-time agent status",
+            )
+            if streaming != st.session_state.streaming_enabled:
+                st.session_state.streaming_enabled = streaming
+                st.success("✓ Setting updated!")
+
+        st.divider()
+
         # Chat controls
         st.markdown("### Chat Controls")
         if st.button("🗑️ Clear Chat History", use_container_width=True):
@@ -374,42 +469,106 @@ def main():
 
         # Process and display assistant response
         with st.chat_message("assistant"):
-            # Show processing status
-            status_placeholder = st.empty()
-            response_placeholder = st.empty()
+            if st.session_state.streaming_enabled:
+                # Streaming mode with real-time updates
+                status_container = st.container()
+                response_placeholder = st.empty()
+                sources_container = st.container()
 
-            status_placeholder.info(
-                "🔍 Processing your query through the agent pipeline..."
-            )
+                final_message = ""
+                final_sources = []
 
-            # Process query
-            result = process_query(prompt)
+                try:
+                    for update in process_query_streaming(prompt):
+                        if update["type"] == "status":
+                            # Show which agent is currently working
+                            with status_container:
+                                st.caption(update["message"])
 
-            # Clear status
-            status_placeholder.empty()
+                        elif update["type"] == "complete":
+                            # Clear status and show final answer
+                            status_container.empty()
+                            final_message = update["message"]
+                            final_sources = update["sources"]
 
-            # Display response
-            if result["success"]:
-                response_placeholder.markdown(result["message"])
+                            # Display response with streaming effect
+                            response_text = ""
+                            for i, char in enumerate(final_message):
+                                response_text += char
+                                # Update every 3 characters for smoother streaming
+                                if i % 3 == 0 or i == len(final_message) - 1:
+                                    response_placeholder.markdown(
+                                        response_text + "▌"
+                                    )
+
+                            # Remove cursor and show final text
+                            response_placeholder.markdown(final_message)
+
+                        elif update["type"] == "error":
+                            status_container.empty()
+                            final_message = update["message"]
+                            final_sources = []
+                            response_placeholder.error(final_message)
+
+                    # Display sources
+                    if final_sources:
+                        with sources_container:
+                            with st.expander(
+                                f"📚 Sources ({len(final_sources)})"
+                            ):
+                                for i, source in enumerate(final_sources):
+                                    display_source_card(source, i)
+                                    if i < len(final_sources) - 1:
+                                        st.divider()
+
+                except Exception as e:
+                    logger.exception("Error during streaming")
+                    status_container.empty()
+                    final_message = f"❌ Streaming Error: {str(e)}"
+                    final_sources = []
+                    response_placeholder.error(final_message)
+
             else:
-                response_placeholder.error(result["message"])
+                # Non-streaming mode (original behavior)
+                status_placeholder = st.empty()
+                response_placeholder = st.empty()
 
-            # Display sources
-            if result["sources"]:
-                with st.expander(
-                    f"📚 Sources ({len(result['sources'])})"
-                ):
-                    for i, source in enumerate(result["sources"]):
-                        display_source_card(source, i)
-                        if i < len(result["sources"]) - 1:
-                            st.divider()
+                status_placeholder.info(
+                    "🔍 Processing your query through the agent pipeline..."
+                )
+
+                # Process query
+                result = process_query(prompt)
+
+                # Clear status
+                status_placeholder.empty()
+
+                # Display response
+                if result["success"]:
+                    final_message = result["message"]
+                    final_sources = result["sources"]
+                    response_placeholder.markdown(final_message)
+                else:
+                    final_message = result["message"]
+                    final_sources = []
+                    response_placeholder.error(final_message)
+
+                # Display sources
+                if final_sources:
+                    with st.expander(
+                        f"📚 Sources ({len(final_sources)})"
+                    ):
+                        for i, source in enumerate(final_sources):
+                            display_source_card(source, i)
+                            if i < len(final_sources) - 1:
+                                st.divider()
 
             # Add to message history
             st.session_state.messages.append(
                 {
                     "role": "assistant",
-                    "content": result["message"],
-                    "sources": result["sources"],
+                    "content": final_message,
+                    "sources": final_sources,
                 }
             )
 
