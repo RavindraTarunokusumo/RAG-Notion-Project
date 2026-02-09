@@ -1,8 +1,7 @@
-import logging
 import functools
+import logging
 from typing import Literal
 
-import cohere
 from langchain_cohere import ChatCohere
 
 from config.settings import settings
@@ -26,10 +25,7 @@ def _apply_cohere_patch(llm_instance):
         client = llm_instance.client
         
         # Langchain-cohere calls client.v2.chat for V2 models
-        if hasattr(client, "v2"):
-            target_client = client.v2
-        else:
-            target_client = client
+        target_client = client.v2 if hasattr(client, "v2") else client
             
         ClientClass = type(target_client)
         
@@ -61,7 +57,9 @@ def _apply_cohere_patch(llm_instance):
                     
                     if has_thinking:
                         logger.debug("Merging Reasoning trace into response content")
-                        from cohere import TextAssistantMessageResponseContentItem
+                        from cohere import (
+                            TextAssistantMessageResponseContentItem,
+                        )
                         
                         new_item = TextAssistantMessageResponseContentItem(
                             type="text",

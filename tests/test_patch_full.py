@@ -1,8 +1,10 @@
-import cohere
-import logging
-from langchain_cohere import ChatCohere
-from config.settings import settings
 import functools
+import logging
+
+import cohere
+from langchain_cohere import ChatCohere
+
+from config.settings import settings
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -84,7 +86,7 @@ patch_cohere_client()
 
 def test_reasoning_full_flow():
     try:
-        logger.info(f"Testing model: command-a-reasoning-08-2025")
+        logger.info("Testing model: command-a-reasoning-08-2025")
         
         llm = ChatCohere(
             model="command-a-reasoning-08-2025",
