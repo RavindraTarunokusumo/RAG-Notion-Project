@@ -6,6 +6,7 @@ Launch with: streamlit run app.py
 
 import logging
 import re
+import time
 from datetime import datetime
 
 import streamlit as st
@@ -620,14 +621,86 @@ def main():
 
         # Settings
         with st.expander("⚙️ Settings"):
+            st.markdown("#### Models")
+            
+            # Planner Model
+            model_options = ["command-r-08-2024", "command-r-plus-08-2024"]
+            current_planner = settings.models.planner_model
+            planner_index = model_options.index(current_planner) if current_planner in model_options else 0
+            
+            planner_model = st.selectbox(
+                "Planner Model",
+                model_options,
+                index=planner_index,
+                help="Model used for breaking down tasks"
+            )
+
+            st.markdown("#### Retrieval")
+            
+            # Retrieval K
+            retrieval_k = st.slider(
+                "Documents to Retrieve", 
+                5, 20, 
+                value=settings.retrieval_k
+            )
+            
+            # Rerank Top N
+            rerank_top_n = st.slider(
+                "Rerank Top N", 
+                3, 10, 
+                value=settings.rerank_top_n
+            )
+
+            st.markdown("#### Display")
+            
+            # Streaming (Existing)
             streaming = st.checkbox(
                 "Enable Streaming",
                 value=st.session_state.streaming_enabled,
                 help="Stream responses character by character with real-time agent status",
             )
-            if streaming != st.session_state.streaming_enabled:
+            
+            # Start fresh session handling for settings in session state if needed
+            if "show_intermediate" not in st.session_state:
+                st.session_state.show_intermediate = False
+            
+            if "verbose_mode" not in st.session_state:
+                st.session_state.verbose_mode = False
+
+            show_intermediate = st.checkbox(
+                "Show Intermediate Results", 
+                value=st.session_state.show_intermediate,
+                help="Display intermediate agent outputs like search queries and reasoning"
+            )
+            
+            verbose_mode = st.checkbox(
+                "Verbose Logging", 
+                value=st.session_state.verbose_mode
+            )
+            
+            # Application Button
+            if st.button("Apply Settings", use_container_width=True):
+                # Update Session State
                 st.session_state.streaming_enabled = streaming
-                st.success("✓ Setting updated!")
+                st.session_state.show_intermediate = show_intermediate
+                st.session_state.verbose_mode = verbose_mode
+                
+                # Update Global Settings
+                settings.models.planner_model = planner_model
+                settings.retrieval_k = retrieval_k
+                settings.rerank_top_n = rerank_top_n
+                
+                # Force graph re-init if model changed (though simple update is fine for this architecture)
+                # But retriever uses settings at runtime, so it's fine.
+                # Planner uses get_agent_llm at runtime? 
+                # Let's check planner.py. Node calls get_agent_llm inside?
+                # Actually planner_node calls get_agent_llm inside the function => dynamic => good.
+                
+                st.success("✓ Settings updated!")
+                
+                # Rerun to reflect changes immediately
+                time.sleep(0.5) 
+                st.rerun()
 
         st.divider()
 
