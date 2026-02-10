@@ -2,6 +2,16 @@ from pydantic import AliasChoices, BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+class ToolAgentConfig(BaseModel):
+    enabled: bool = True
+    timeout: float = 30.0
+    web_searcher_enabled: bool = True
+    code_executor_enabled: bool = True
+    citation_validator_enabled: bool = True
+    math_solver_enabled: bool = True
+    diagram_generator_enabled: bool = True
+
+
 class CohereModelConfig(BaseModel):
     planner_model: str = "command-r-08-2024"
     researcher_model: str = "command-r-08-2024"
@@ -28,18 +38,21 @@ class Settings(BaseSettings):
     # Vector Store
     chroma_persist_dir: str = "./data/chroma_db"
     collection_name: str = "notion_knowledge_base"
-    embedding_batch_size: int = 10
-    embedding_delay: float = 10.0 # Prevent rate limiting (free tier)
+    embedding_batch_size: int = 16
+    embedding_delay: float = 1.0 # Prevent rate limiting (free tier)
 
     model_config = SettingsConfigDict(extra="ignore", env_file=".env", env_file_encoding="utf-8")
     
     # RAG Settings
-    chunk_size: int = 1000
+    chunk_size: int = 2048
     chunk_overlap: int = 200
     retrieval_k: int = 10
     rerank_top_n: int = 5
     
     # Model Config
     models: CohereModelConfig = CohereModelConfig()
+
+    # Tool Agents
+    tool_agents: ToolAgentConfig = ToolAgentConfig()
 
 settings = Settings()

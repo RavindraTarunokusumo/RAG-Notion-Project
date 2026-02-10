@@ -48,6 +48,9 @@ class AgentState(TypedDict):
     final_answer: str
     sources: list[dict]
     
+    # Tool agent outputs (optional)
+    tool_results: list[dict]
+
     # Error handling
     error: str | None
     current_agent: str

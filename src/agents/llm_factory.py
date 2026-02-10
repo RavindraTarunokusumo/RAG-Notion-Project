@@ -79,7 +79,7 @@ def _apply_cohere_patch(llm_instance):
 
 # -------------------------------------------------------
 
-AgentType = Literal["planner", "researcher", "reasoner", "synthesiser"]
+AgentType = Literal["planner", "researcher", "reasoner", "synthesiser", "tool_agent"]
 
 # Model assignments based on task complexity
 def _get_agent_configs() -> dict:
@@ -108,6 +108,12 @@ def _get_agent_configs() -> dict:
             "temperature": settings.models.synthesiser_temperature,
             "max_tokens": 4096,
             "description": "Response generation - creative, coherent"
+        },
+        "tool_agent": {
+            "model": settings.models.synthesiser_model,
+            "temperature": 0.2,
+            "max_tokens": 2048,
+            "description": "Tool agent tasks - utility, focused"
         }
     }
 

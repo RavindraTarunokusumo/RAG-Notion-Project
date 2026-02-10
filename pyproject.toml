@@ -17,6 +17,7 @@ dependencies = [
     "pymupdf>=1.26.7",
     "python-dotenv>=1.0.1",
     "streamlit>=1.31.0",
+    "sympy>=1.13.0",
 ]
 
 [dependency-groups]
