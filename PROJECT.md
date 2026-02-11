@@ -3117,22 +3117,22 @@ Create comprehensive README with setup and usage instructions.
 
 ## Future Backlog
 
-### Epic: AgentLightning Integration for Continuous Learning
+### Epic: AgentLightning Integration for Prompt Optimization
 
-**Goal:** Enable reinforcement learning-based optimization of the multi-agent RAG system using Microsoft's AgentLightning framework
+**Goal:** Use Microsoft's AgentLightning to collect agent trajectories, gather user feedback, and iteratively optimize agent prompts via Automatic Prompt Optimization (APO).
+
+> **Constraint:** All agents use hosted LLM APIs (Cohere, OpenAI, Anthropic, etc.) — RL weight training (PPO/DPO/GRPO) is **not applicable** since we have no access to model weights. AgentLightning's **APO** algorithm works with API-only models: it uses an LLM to critique collected trajectories and rewrite prompts, requiring no weight access.
 
 **Overview:**
-<cite index="1-1,2-3,2-4">Integrate AgentLightning to make the 4-agent system (Planner, Researcher, Reasoner, Synthesiser) trainable through real-world interactions using reinforcement learning, allowing agents to learn from user feedback and improve their performance over time without requiring code rewrites.</cite>
+Integrate AgentLightning to collect trajectory data from the 4-agent pipeline, gather user feedback as reward signals, and use APO to automatically improve agent system prompts over time.
 
 **Key Benefits:**
-- <cite index="2-6,2-17">Continuous improvement through reinforcement learning based on real deployment behavior and task logic</cite>
-- Agent optimization based on real user queries and feedback
-- <cite index="2-18">Framework-agnostic integration (works with existing LangChain/LangGraph setup with no modifications needed)</cite>
-- <cite index="1-3">Selective optimization of individual agents or the entire multi-agent system</cite>
-- Collection of interaction data for training and analysis
+- Automatic prompt improvement based on real deployment data (no manual prompt engineering)
+- Framework-agnostic integration (works with existing LangChain/LangGraph setup)
+- Selective optimization of individual agents or the entire multi-agent system
+- Collection of interaction data for analysis and evaluation
 
 **Architecture Approach:**
-<cite index="2-1,2-2">AgentLightning's Lightning Server and Lightning Client bridge the gap between agent frameworks and LLM training frameworks by serving as a thin, flexible intermediate layer.</cite> <cite index="4-10,4-11">Agent Lightning makes AI agents trainable through RL by separating how agents execute tasks from model training, allowing developers to add RL capabilities with virtually no code modification, converting an agent's experience into a format that RL can use by treating the agent's execution as a sequence of states and actions.</cite>
 
 ```
 ┌────────────────────────────────────────────────────────────┐
@@ -3150,24 +3150,22 @@ Create comprehensive README with setup and usage instructions.
 │  │ (Trajectories)   │      │ (LLM Proxy)       │          │
 │  └──────────────────┘      └──────────────────┘           │
 │         │                            │                     │
-│         │ Training Data              │ Optimized Model    │
+│         │ Trajectory Data            │ Optimized Prompts  │
 │         ▼                            ▼                     │
 │  ┌──────────────────┐      ┌──────────────────┐           │
-│  │ RL Trainer       │      │ User Feedback     │          │
-│  │ (PPO/DPO/GRPO)   │      │ & Rewards         │          │
+│  │ APO Engine       │      │ User Feedback     │          │
+│  │ (Prompt Rewrite) │      │ & Rewards         │          │
 │  └──────────────────┘      └──────────────────┘           │
 └────────────────────────────────────────────────────────────┘
 ```
 
 **Implementation Strategy:**
 
-> **Note:** Session 8 was used for A2A Tool Agent Framework implementation (NRAG-027 to NRAG-033, completed 2026-02-11). AgentLightning integration has been rescheduled to Sessions 9-11.
-
 | Session | Focus | Token Budget | Key Deliverables |
 |---------|-------|--------------|------------------|
 | Session 9 | Foundation & Data Collection | ~80,000 | Install AGL, setup emitters, trajectory tracking |
 | Session 10 | Feedback & Reward System | ~80,000 | User feedback UI, automatic rewards, signal pipeline |
-| Session 11 | Training & Evaluation | ~80,000 | Training scripts, evaluation framework, analytics |
+| Session 11 | APO & Evaluation | ~80,000 | APO prompt optimization, evaluation framework, analytics |
 
 ---
 
@@ -3748,64 +3746,59 @@ Integrate reward calculation and emission into the main workflow.
 
 ---
 
-### Session 10: Training Infrastructure & Evaluation
+### Session 11: APO Prompt Optimization & Evaluation
 
-**Session Token Budget:** ~80,000 tokens  
-**Focus:** Setup training pipeline and evaluation framework
+**Session Token Budget:** ~80,000 tokens
+**Focus:** Automatic Prompt Optimization and evaluation framework
 
 ---
 
-#### NRAG-067: Training Script Implementation
+#### NRAG-067: APO Prompt Optimization
 
-**Priority:** P1 - High  
-**Token Estimate:** 16,000 tokens  
+**Priority:** P1 - High
+**Token Estimate:** 16,000 tokens
 **Status:** Backlog
 
-**Description:**  
-<cite index="1-4">Create training scripts to optimize agents using collected trajectory data with reinforcement learning, automatic prompt optimization, and supervised fine-tuning algorithms.</cite>
+**Description:**
+Use AgentLightning's Automatic Prompt Optimization (APO) to iteratively improve agent system prompts using collected trajectories and reward signals. APO works with API-only models — a critique LLM evaluates trajectory rollouts and rewrites prompts to improve performance.
 
 **Acceptance Criteria:**
 
-- [ ] Training script with AgentLightning trainer
-- [ ] <cite index="1-4">Configuration for different RL algorithms (PPO, DPO, GRPO)</cite>
-- [ ] Model checkpoint management
-- [ ] Training metrics and logging (loss, reward, episode length)
-- [ ] Integration with existing agent architecture
-- [ ] <cite index="4-23,4-24">Resource efficiency: agent runner on CPUs, model training on GPUs, with independent scaling</cite>
+- [ ] APO configuration with AgentLightning
+- [ ] Critique LLM setup (e.g., GPT-4.1-mini or equivalent)
+- [ ] Prompt versioning and rollback
+- [ ] Optimization metrics and logging (reward improvement per iteration)
+- [ ] Integration with existing agent prompts (Planner, Researcher, Reasoner, Synthesiser)
+- [ ] Validation dataset to measure prompt quality before/after
 
-**Example Training Script:**
+**Example APO Script:**
 
 ```python
-# scripts/train_agents.py
-from agentlightning import Trainer
+# scripts/optimize_prompts.py
+from agentlightning import APOTrainer
 from src.agl.store_manager import get_store_manager
 from config.agl_settings import agl_config
 
-def train_reasoner_agent():
-    """Train the Reasoner agent using collected trajectories."""
-    
+def optimize_reasoner_prompt():
+    """Optimize the Reasoner agent's system prompt using APO."""
+
     store = get_store_manager().get_store()
-    
-    trainer = Trainer(
-        algorithm=agl_config.training_algorithm,  # ppo, dpo, or grpo
-        model_name="CohereForAI/c4ai-command-a-reasoning-v1",
+
+    trainer = APOTrainer(
         store=store,
-        training_config={
-            "learning_rate": 1e-5,
-            "batch_size": 4,
-            "epochs": 3,
-            "gradient_accumulation_steps": 8,
-        }
+        critique_model="gpt-4.1-mini",   # LLM for trajectory critique
+        rewrite_model="gpt-4.1-mini",    # LLM for prompt rewriting
     )
-    
-    # Train on collected trajectories
-    trainer.train(
+
+    # Run APO optimization loop
+    trainer.optimize(
         agent_name="reasoner_agent",
-        num_iterations=100,
+        num_iterations=10,
+        validation_tasks=load_validation_dataset(),
     )
-    
-    # Save checkpoint
-    trainer.save_checkpoint("./checkpoints/reasoner_v1")
+
+    # Export optimized prompt
+    trainer.export_prompt("./prompts/reasoner_v2.txt")
 ```
 
 ---
@@ -3889,53 +3882,51 @@ Create comprehensive documentation for AgentLightning integration.
 
 ### AgentLightning Epic Summary
 
-**Total Sessions:** 3 (Sessions 8-10)  
-**Total Token Budget:** ~240,000 tokens  
+**Total Sessions:** 3 (Sessions 9-11)
+**Total Token Budget:** ~240,000 tokens
 **Timeline:** Progressive implementation with validation at each stage
 
 **Task Breakdown:**
 
 | Task ID | Task | Tokens | Priority | Session |
 |---------|------|--------|----------|----------|
-| NRAG-060 | Installation & Configuration | 8,000 | P1 | 8 |
-| NRAG-061 | Store & Emitter Setup | 12,000 | P1 | 8 |
-| NRAG-062 | Agent Integration | 10,000 | P0 | 8 |
-| NRAG-063 | Trajectory Tracking | 10,000 | P1 | 8 |
-| NRAG-064 | User Feedback UI | 12,000 | P0 | 9 |
-| NRAG-065 | Automatic Rewards | 14,000 | P1 | 9 |
-| NRAG-066 | Reward Pipeline | 10,000 | P0 | 9 |
-| NRAG-067 | Training Scripts | 16,000 | P1 | 10 |
-| NRAG-068 | Evaluation Framework | 12,000 | P1 | 10 |
-| NRAG-069 | Analytics Dashboard | 12,000 | P2 | 10 |
-| NRAG-070 | Documentation | 8,000 | P1 | 10 |
+| NRAG-060 | Installation & Configuration | 8,000 | P1 | 9 |
+| NRAG-061 | Store & Emitter Setup | 12,000 | P1 | 9 |
+| NRAG-062 | Agent Integration | 10,000 | P0 | 9 |
+| NRAG-063 | Trajectory Tracking | 10,000 | P1 | 9 |
+| NRAG-064 | User Feedback UI | 12,000 | P0 | 10 |
+| NRAG-065 | Automatic Rewards | 14,000 | P1 | 10 |
+| NRAG-066 | Reward Pipeline | 10,000 | P0 | 10 |
+| NRAG-067 | APO Prompt Optimization | 16,000 | P1 | 11 |
+| NRAG-068 | Evaluation Framework | 12,000 | P1 | 11 |
+| NRAG-069 | Analytics Dashboard | 12,000 | P2 | 11 |
+| NRAG-070 | Documentation | 8,000 | P1 | 11 |
 | **Total** | | **124,000** | | |
 
 **Key Milestones:**
-1. **Foundation (Session 8):** Basic infrastructure and emitter integration (~40,000 tokens)
-2. **Feedback System (Session 9):** User feedback and reward generation (~36,000 tokens)
-3. **Training & Evaluation (Session 10):** Complete training pipeline and analytics (~48,000 tokens)
+1. **Foundation (Session 9):** Basic infrastructure and emitter integration (~40,000 tokens)
+2. **Feedback System (Session 10):** User feedback and reward generation (~36,000 tokens)
+3. **APO & Evaluation (Session 11):** Prompt optimization and analytics (~48,000 tokens)
 
 **Architecture Impact:**
-- <cite index="4-25,4-29">Minimal changes to existing agent code with virtually no code modification needed</cite>
+- Minimal changes to existing agent code
 - Optional feature (can be disabled via config)
-- <cite index="2-18,2-23">Leverages existing LangChain/LangGraph infrastructure with seamless integration</cite>
-- <cite index="1-3">Selective optimization: Reasoner & Synthesiser prioritized for training</cite>
+- Leverages existing LangChain/LangGraph infrastructure
+- Selective optimization: Reasoner & Synthesiser prioritized for prompt tuning
+- **API-compatible:** APO works with hosted LLM APIs (no model weight access required)
 
 **Expected Outcomes:**
-- <cite index="2-6">Continuous improvement of agent performance through bridging existing agentic systems with reinforcement learning</cite>
+- Continuous prompt improvement based on real deployment data
 - Data-driven optimization based on real user queries
-- Ability to fine-tune agents for specific domains
 - Reduced reliance on manual prompt engineering
-- Better handling of edge cases through learned behavior
-- <cite index="4-30">Improved accuracy in complex tasks like natural language to SQL, with consistent performance improvements</cite>
+- Better handling of edge cases through learned prompt patterns
+- Measurable quality improvements tracked via evaluation framework
 
 ---
 
-### Epic: Dynamic Tool Agents with A2A Protocol
+### Epic: Dynamic Tool Agents with A2A Protocol (Completed - Session 8)
 
-> **Design Note:** The core pipeline (Planner → Researcher → Reasoner → Synthesiser) uses a deterministic LangGraph workflow where agent sequencing is fixed. A2A Agent Cards are **not useful** for these core agents since they don't need to discover each other.
->
-> Instead, A2A is valuable for **dynamic tool agents** that core agents can optionally invoke based on context. These tool agents are discovered at runtime via Agent Cards, enabling flexible capability extension without modifying the core workflow.
+> **Completed 2026-02-11.** All items implemented with 34/34 tests passing. See `src/tools/` for implementation.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -3961,257 +3952,33 @@ Create comprehensive documentation for AgentLightning integration.
               (Capabilities, Input/Output Schemas)
 ```
 
-| ID | Item | Token Estimate | Priority |
-|----|------|----------------|----------|
-| NRAG-027 | A2A Tool Agent Framework | 18,000 | P2 |
-| NRAG-028 | Tool Agent: Web Searcher | 15,000 | P2 |
-| NRAG-029 | Tool Agent: Code Executor | 20,000 | P2 |
-| NRAG-030 | Tool Agent: Citation Validator | 12,000 | P3 |
-| NRAG-031 | Tool Agent: Math Solver | 15,000 | P3 |
-| NRAG-032 | Tool Agent: Diagram Generator | 18,000 | P3 |
-| NRAG-033 | A2A Discovery & Invocation Client | 15,000 | P2 |
-
-#### NRAG-027: A2A Tool Agent Framework
-
-**Priority:** P2 - Medium  
-**Token Estimate:** 18,000 tokens  
-**Status:** Backlog
-
-**Description:**  
-Create the base framework for dynamic tool agents that core agents can discover and invoke via A2A protocol.
-
-**Acceptance Criteria:**
-
-- [ ] Base `ToolAgent` class with A2A compliance
-- [ ] Agent Card generation for each tool agent
-- [ ] Standardized input/output schemas
-- [ ] Registration mechanism for tool agents
-- [ ] Health check and capability reporting
-
-**Implementation Sketch:**
-
-```python
-# src/tools/base.py
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import Any, Dict, List
-
-@dataclass
-class AgentCard:
-    """A2A Agent Card for tool discovery."""
-    name: str
-    description: str
-    version: str
-    capabilities: List[str]
-    input_schema: Dict[str, Any]
-    output_schema: Dict[str, Any]
-    endpoint: str
-
-class ToolAgent(ABC):
-    """Base class for A2A-compliant tool agents."""
-    
-    @abstractmethod
-    def get_agent_card(self) -> AgentCard:
-        """Return the A2A agent card for discovery."""
-        pass
-    
-    @abstractmethod
-    async def execute(self, task: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute a task and return results."""
-        pass
-    
-    def can_handle(self, task_description: str) -> float:
-        """Return confidence (0-1) that this agent can handle the task."""
-        pass
-```
+| ID | Item | Status |
+|----|------|--------|
+| NRAG-027 | A2A Tool Agent Framework (`src/tools/base.py`, `src/tools/registry.py`) | [x] Done |
+| NRAG-028 | Web Searcher (`src/tools/web_searcher.py`) | [x] Done |
+| NRAG-029 | Code Executor (`src/tools/code_executor.py`) | [x] Done |
+| NRAG-030 | Citation Validator (`src/tools/citation_validator.py`) | [x] Done |
+| NRAG-031 | Math Solver (`src/tools/math_solver.py`) | [x] Done |
+| NRAG-032 | Diagram Generator (`src/tools/diagram_generator.py`) | [x] Done |
+| NRAG-033 | A2A Discovery & Invocation Client (`src/tools/client.py`) | [x] Done |
 
 ---
 
-#### NRAG-028: Tool Agent - Web Searcher
+### Epic: User Interface (Partially Completed - Session 7)
 
-**Priority:** P2 - Medium  
-**Token Estimate:** 15,000 tokens  
-**Status:** Backlog
+> NRAG-050 through NRAG-054 completed in Session 7. Remaining items are backlog.
 
-**Description:**  
-Dynamic tool agent for real-time web search when knowledge base lacks current information.
-
-**Invoked By:** Researcher Agent  
-**Trigger Conditions:**
-
-- Query contains "latest", "current", "recent", "2024", "2025"
-- Knowledge base has no relevant documents
-- Topic is fast-moving (AI news, releases, etc.)
-
-**Agent Card:**
-
-```json
-{
-    "name": "web-searcher",
-    "description": "Searches the web for current information not in the knowledge base",
-    "capabilities": ["web_search", "news_search", "site_specific_search"],
-    "input_schema": {
-        "query": "string",
-        "max_results": "integer",
-        "date_filter": "string (optional)"
-    },
-    "output_schema": {
-        "results": [{"title": "string", "url": "string", "snippet": "string"}],
-        "search_metadata": {"total_results": "integer", "search_time": "float"}
-    }
-}
-```
-
----
-
-#### NRAG-029: Tool Agent - Code Executor
-
-**Priority:** P2 - Medium  
-**Token Estimate:** 20,000 tokens  
-**Status:** Backlog
-
-**Description:**  
-Executes code snippets found in papers to validate algorithms or demonstrate concepts.
-
-**Invoked By:** Reasoner Agent  
-**Trigger Conditions:**
-
-- Retrieved documents contain code blocks
-- Query asks "how does X work" for algorithmic topics
-- Reasoner needs to verify computational claims
-
-**Security Considerations:**
-
-- Sandboxed execution environment
-- Resource limits (CPU, memory, time)
-- No network access from sandbox
-- Whitelist of allowed libraries
-
----
-
-#### NRAG-030: Tool Agent - Citation Validator
-
-**Priority:** P3 - Low  
-**Token Estimate:** 12,000 tokens  
-**Status:** Backlog
-
-**Description:**  
-Validates that citations in the knowledge base are accurate and papers exist.
-
-**Invoked By:** Reasoner Agent  
-**Trigger Conditions:**
-
-- High-stakes queries requiring verified sources
-- Contradictions detected between sources
-- User explicitly requests citation verification
-
----
-
-#### NRAG-031: Tool Agent - Math Solver
-
-**Priority:** P3 - Low  
-**Token Estimate:** 15,000 tokens  
-**Status:** Backlog
-
-**Description:**  
-Solves mathematical equations and validates formulas found in papers.
-
-**Invoked By:** Reasoner Agent  
-**Trigger Conditions:**
-
-- Documents contain LaTeX equations
-- Query involves quantitative analysis
-- Need to verify mathematical claims
-
----
-
-#### NRAG-032: Tool Agent - Diagram Generator
-
-**Priority:** P3 - Low  
-**Token Estimate:** 18,000 tokens  
-**Status:** Backlog
-
-**Description:**  
-Generates visual diagrams (architecture, flowcharts, etc.) from textual descriptions.
-
-**Invoked By:** Synthesiser Agent  
-**Trigger Conditions:**
-
-- Query asks about system architecture
-- Complex multi-step processes need visualization
-- User requests visual explanation
-
-**Output Formats:** Mermaid, PlantUML, SVG
-
----
-
-#### NRAG-033: A2A Discovery & Invocation Client
-
-**Priority:** P2 - Medium  
-**Token Estimate:** 15,000 tokens  
-**Status:** Backlog
-
-**Description:**  
-Client library for core agents to discover and invoke tool agents via A2A protocol.
-
-**Acceptance Criteria:**
-
-- [ ] Discover available tool agents from registry
-- [ ] Filter agents by capability
-- [ ] Send tasks and receive results
-- [ ] Handle timeouts and failures gracefully
-- [ ] Cache agent cards for performance
-
-**Implementation Sketch:**
-
-```python
-# src/tools/client.py
-class A2AToolClient:
-    """Client for discovering and invoking tool agents."""
-    
-    def __init__(self, registry_url: str):
-        self.registry_url = registry_url
-        self._agent_cache: Dict[str, AgentCard] = {}
-    
-    async def discover_agents(
-        self, 
-        capability: str = None
-    ) -> List[AgentCard]:
-        """Discover available tool agents, optionally filtered by capability."""
-        pass
-    
-    async def invoke_tool(
-        self,
-        agent_name: str,
-        task: Dict[str, Any],
-        timeout: float = 30.0
-    ) -> Dict[str, Any]:
-        """Invoke a tool agent and return results."""
-        pass
-    
-    def select_best_agent(
-        self,
-        task_description: str,
-        available_agents: List[AgentCard]
-    ) -> AgentCard | None:
-        """Use LLM to select the best agent for a task."""
-        pass
-```
-
-### Epic: User Interface
-
-| ID | Item | Token Estimate | Priority |
-|----|------|----------------|----------|
-| NRAG-050 | Streamlit Chat Interface - Foundation | 15,000 | P1 |
-| NRAG-051 | Chat Session Management | 10,000 | P1 |
-| NRAG-052 | Source Display & Citation UI | 8,000 | P1 |
-| NRAG-053 | Agent Progress Visualization | 12,000 | P2 |
-| NRAG-054 | Settings & Configuration Panel | 6,000 | P2 |
-| NRAG-055 | Extended Model Configuration | 8,000 | P2 |
-| NRAG-056 | Session Title Generation | 5,000 | P3 |
-| NRAG-057 | Session Autosave & History | 6,000 | P2 |
-| NRAG-058 | Manual Reference Linking UI | 10,000 | P3 |
-| NRAG-059 | Knowledge Base Management Buttons | 8,000 | P2 |
+| ID | Item | Token Estimate | Priority | Status |
+|----|------|----------------|----------|--------|
+| NRAG-050 | Streamlit Chat Interface - Foundation | 15,000 | P1 | [x] Done |
+| NRAG-051 | Chat Session Management | 10,000 | P1 | [x] Done |
+| NRAG-052 | Source Display & Citation UI | 8,000 | P1 | [x] Done |
+| NRAG-053 | Agent Progress Visualization | 12,000 | P2 | [x] Done |
+| NRAG-054 | Settings & Configuration Panel | 6,000 | P2 | [x] Done |
+| NRAG-055 | Extended Model Configuration | 8,000 | P2 | Backlog |
+| NRAG-056 | Session Title Generation | 5,000 | P3 | Backlog |
+| NRAG-057 | Session Autosave & History | 6,000 | P2 | Backlog |
+| NRAG-058 | Manual Reference Linking UI | 10,000 | P3 | Backlog |
 
 ---
 
