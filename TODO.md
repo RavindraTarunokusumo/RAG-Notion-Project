@@ -13,7 +13,7 @@
 
 ## Up Next
 
-### AgentLightning Epic (NRAG-060 to NRAG-070)
+### AgentLightning Epic (NRAG-063 to NRAG-073)
 
 > **Constraint:** All agents use hosted LLM APIs (no model weight access). RL weight
 > training (PPO/DPO/GRPO via verl) is **not applicable**. However, AgentLightning's
@@ -21,7 +21,7 @@
 > to critique trajectories and rewrite prompts, requiring no weight access.
 >
 > **Kept:** Store, emitters, trajectory tracking, feedback, APO, evaluation, analytics.
-> **Dropped:** NRAG-067 RL training scripts (PPO/DPO/GRPO weight training).
+> **Dropped:** RL training scripts (PPO/DPO/GRPO weight training).
 
 ### Session 9: AgentLightning Foundation
 
@@ -29,10 +29,10 @@ Install AgentLightning, set up trajectory collection, and wire emitters into age
 
 | ID | Task | Priority | Notes |
 |----|------|----------|-------|
-| NRAG-060 | AgentLightning Installation & Configuration | P1 | `config/agl_settings.py`, update `pyproject.toml`, `.env.example` |
-| NRAG-061 | Lightning Store & Emitter Setup | P1 | `src/agl/store_manager.py`, `src/agl/emitter.py` |
-| NRAG-062 | Agent Integration with Emitters | P0 | Wrap agent functions with `emit_agent_span` decorator |
-| NRAG-063 | Trajectory Tracking | P1 | `src/agl/trajectory.py`, context manager for query-response cycles |
+| NRAG-063 | AgentLightning Installation & Configuration | P1 | `config/agl_settings.py`, update `pyproject.toml`, `.env.example` |
+| NRAG-064 | Lightning Store & Emitter Setup | P1 | `src/agl/store_manager.py`, `src/agl/emitter.py` |
+| NRAG-065 | Agent Integration with Emitters | P0 | Wrap agent functions with `emit_agent_span` decorator |
+| NRAG-066 | Trajectory Tracking | P1 | `src/agl/trajectory.py`, context manager for query-response cycles |
 
 ### Session 10: Feedback & Prompt Optimization
 
@@ -40,10 +40,10 @@ Collect user feedback and use APO to iteratively improve agent prompts.
 
 | ID | Task | Priority | Notes |
 |----|------|----------|-------|
-| NRAG-064 | User Feedback Interface in Streamlit | P0 | Thumbs up/down, star rating, text feedback in `app.py` |
-| NRAG-065 | Automatic Reward Generation | P1 | Intermediate rewards per agent stage (retrieval quality, confidence, etc.) |
-| NRAG-066 | Reward Signal Pipeline Integration | P0 | Wire rewards into AGL store, user feedback overrides auto-rewards |
-| NRAG-067 | ~~RL Training Scripts~~ → **APO Prompt Optimization** | P1 | Use APO algorithm (LLM critiques trajectories → rewrites prompts). No weight training. Requires a critique LLM (e.g. GPT-4.1-mini). |
+| NRAG-067 | User Feedback Interface in Streamlit | P0 | Thumbs up/down, star rating, text feedback in `app.py` |
+| NRAG-068 | Automatic Reward Generation | P1 | Intermediate rewards per agent stage (retrieval quality, confidence, etc.) |
+| NRAG-069 | Reward Signal Pipeline Integration | P0 | Wire rewards into AGL store, user feedback overrides auto-rewards |
+| NRAG-070 | APO Prompt Optimization | P1 | Use APO algorithm (LLM critiques trajectories → rewrites prompts). No weight training. Requires a critique LLM (e.g. GPT-4.1-mini). |
 
 ### Session 11: Evaluation & Analytics
 
@@ -51,9 +51,9 @@ Measure improvement from optimized prompts and monitor pipeline health.
 
 | ID | Task | Priority | Notes |
 |----|------|----------|-------|
-| NRAG-068 | Evaluation Framework | P1 | Test query dataset, metrics (retrieval precision, answer quality), baseline vs optimized comparison |
-| NRAG-069 | Analytics & Monitoring Dashboard | P2 | Streamlit page for trajectory stats, reward distribution, prompt version tracking |
-| NRAG-070 | Documentation & Best Practices | P1 | Setup guide, APO workflow, reward design, troubleshooting |
+| NRAG-071 | Evaluation Framework | P1 | Test query dataset, metrics (retrieval precision, answer quality), baseline vs optimized comparison |
+| NRAG-072 | Analytics & Monitoring Dashboard | P2 | Streamlit page for trajectory stats, reward distribution, prompt version tracking |
+| NRAG-073 | Documentation & Best Practices | P1 | Setup guide, APO workflow, reward design, troubleshooting |
 
 ---
 
@@ -65,9 +65,9 @@ Branch: `epic/streamlit`
 |----|------|----------|-------|
 | NRAG-055 | Extended Model Configuration | P2 | Per-agent model selectors in settings panel |
 | NRAG-056 | Session Title Generation | P3 | LLM-generated session titles from first query |
-| NRAG-057 | Session Autosave & History | P2 | Auto-save after each response, no data loss on refresh |
+| NRAG-057 | Session Autosave & History | P2 | Auto-save after each response, no data loss on refresh. Remove manual Save button. |
 | NRAG-058 | Manual Reference Linking UI | P3 | Let users manually link/tag references |
-| NRAG-071 | Auto-Save Session on Prompt + Response | P1 | Remove manual Save button; persist session when a user sends a query (save prompt) and again when output generation completes (save response). |
+| NRAG-059 | Knowledge Base Management Buttons | P2 | UI controls for test connection, ingest, and rebuild operations |
 
 ## Model Ecosystem Expansion (Backlog)
 
@@ -78,8 +78,6 @@ Branch: `epic/model-ecosystem-expansion`
 | NRAG-060 | Multi-Provider LLM Abstraction | P2 | Refactor `llm_factory.py` with Provider enum, unified interface |
 | NRAG-061 | OpenAI & Anthropic Integration | P2 | `langchain-openai`, `langchain-anthropic`, model mapping |
 | NRAG-062 | Gemini, Qwen & Deepseek Support | P2 | `langchain-google-genai`, OpenAI-compatible endpoints |
-
-> **Note:** NRAG-060/061/062 IDs are reused between AgentLightning and Model Ecosystem epics in PROJECT.md. These are distinct tasks under different epics.
 
 ## Advanced Features (Backlog, Unscoped)
 
@@ -116,10 +114,10 @@ Branch: `epic/model-ecosystem-expansion`
 ## Suggested Order of Execution
 
 1. **TD-001/002/003** - Harden the foundation (error handling, logging, validation)
-2. **Session 9** - AgentLightning foundation (start collecting trajectories early)
-3. **NRAG-055/057** - UI polish (extended models, autosave)
-4. **Session 10** - Feedback & APO prompt optimization
-5. **Model Ecosystem** - Multi-provider support
-6. **Session 11** - Evaluation & analytics
+2. **Session 9 (NRAG-063 to 066)** - AgentLightning foundation (start collecting trajectories early)
+3. **NRAG-055/057/059** - UI polish (extended models, autosave, KB management)
+4. **Session 10 (NRAG-067 to 069)** - Feedback & APO prompt optimization
+5. **Model Ecosystem (NRAG-060 to 062)** - Multi-provider support
+6. **Session 11 (NRAG-071 to 073)** - Evaluation & analytics
 7. **Deployment** - Containerization, API, cloud
 8. **Advanced Features** - Memory, caching, multi-DB
