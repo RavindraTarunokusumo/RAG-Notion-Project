@@ -13,9 +13,19 @@
 
 ## Up Next
 
+### AgentLightning Epic (NRAG-060 to NRAG-070)
+
+> **Constraint:** All agents use hosted LLM APIs (no model weight access). RL weight
+> training (PPO/DPO/GRPO via verl) is **not applicable**. However, AgentLightning's
+> **Automatic Prompt Optimization (APO)** works with API-only models - it uses an LLM
+> to critique trajectories and rewrite prompts, requiring no weight access.
+>
+> **Kept:** Store, emitters, trajectory tracking, feedback, APO, evaluation, analytics.
+> **Dropped:** NRAG-067 RL training scripts (PPO/DPO/GRPO weight training).
+
 ### Session 9: AgentLightning Foundation
 
-Install AgentLightning and wire it into the existing agent pipeline for trajectory collection.
+Install AgentLightning, set up trajectory collection, and wire emitters into agent pipeline.
 
 | ID | Task | Priority | Notes |
 |----|------|----------|-------|
@@ -24,30 +34,32 @@ Install AgentLightning and wire it into the existing agent pipeline for trajecto
 | NRAG-062 | Agent Integration with Emitters | P0 | Wrap agent functions with `emit_agent_span` decorator |
 | NRAG-063 | Trajectory Tracking | P1 | `src/agl/trajectory.py`, context manager for query-response cycles |
 
-### Session 10: User Feedback & Reward System
+### Session 10: Feedback & Prompt Optimization
 
-Collect user signals and generate reward data for RL training.
+Collect user feedback and use APO to iteratively improve agent prompts.
 
 | ID | Task | Priority | Notes |
 |----|------|----------|-------|
 | NRAG-064 | User Feedback Interface in Streamlit | P0 | Thumbs up/down, star rating, text feedback in `app.py` |
 | NRAG-065 | Automatic Reward Generation | P1 | Intermediate rewards per agent stage (retrieval quality, confidence, etc.) |
 | NRAG-066 | Reward Signal Pipeline Integration | P0 | Wire rewards into AGL store, user feedback overrides auto-rewards |
+| NRAG-067 | ~~RL Training Scripts~~ → **APO Prompt Optimization** | P1 | Use APO algorithm (LLM critiques trajectories → rewrites prompts). No weight training. Requires a critique LLM (e.g. GPT-4.1-mini). |
 
-### Session 11: Training Infrastructure & Evaluation
+### Session 11: Evaluation & Analytics
 
-Build the training loop and measure improvement.
+Measure improvement from optimized prompts and monitor pipeline health.
 
 | ID | Task | Priority | Notes |
 |----|------|----------|-------|
-| NRAG-067 | Training Script Implementation | P1 | `scripts/train_agents.py`, PPO/DPO/GRPO, checkpoint mgmt |
-| NRAG-068 | Evaluation Framework | P1 | Test dataset, metrics (F1, BLEU, quality), baseline comparison |
-| NRAG-069 | Analytics & Monitoring Dashboard | P2 | Streamlit page for trajectory stats, reward distribution, training progress |
-| NRAG-070 | Documentation & Best Practices | P1 | Setup guide, reward engineering, troubleshooting |
+| NRAG-068 | Evaluation Framework | P1 | Test query dataset, metrics (retrieval precision, answer quality), baseline vs optimized comparison |
+| NRAG-069 | Analytics & Monitoring Dashboard | P2 | Streamlit page for trajectory stats, reward distribution, prompt version tracking |
+| NRAG-070 | Documentation & Best Practices | P1 | Setup guide, APO workflow, reward design, troubleshooting |
 
 ---
 
 ## UI Enhancements (Backlog)
+
+Branch: `epic/streamlit`
 
 | ID | Task | Priority | Notes |
 |----|------|----------|-------|
@@ -55,6 +67,7 @@ Build the training loop and measure improvement.
 | NRAG-056 | Session Title Generation | P3 | LLM-generated session titles from first query |
 | NRAG-057 | Session Autosave & History | P2 | Auto-save after each response, no data loss on refresh |
 | NRAG-058 | Manual Reference Linking UI | P3 | Let users manually link/tag references |
+| NRAG-071 | Auto-Save Session on Prompt + Response | P1 | Remove manual Save button; persist session when a user sends a query (save prompt) and again when output generation completes (save response). |
 
 ## Model Ecosystem Expansion (Backlog)
 
@@ -103,10 +116,10 @@ Branch: `epic/model-ecosystem-expansion`
 ## Suggested Order of Execution
 
 1. **TD-001/002/003** - Harden the foundation (error handling, logging, validation)
-2. **Session 9** - AgentLightning foundation (data collection starts early)
+2. **Session 9** - AgentLightning foundation (start collecting trajectories early)
 3. **NRAG-055/057** - UI polish (extended models, autosave)
-4. **Session 10** - Feedback & rewards
+4. **Session 10** - Feedback & APO prompt optimization
 5. **Model Ecosystem** - Multi-provider support
-6. **Session 11** - Training & evaluation
+6. **Session 11** - Evaluation & analytics
 7. **Deployment** - Containerization, API, cloud
 8. **Advanced Features** - Memory, caching, multi-DB
