@@ -3117,813 +3117,6 @@ Create comprehensive README with setup and usage instructions.
 
 ## Future Backlog
 
-### Epic: AgentLightning Integration for Prompt Optimization
-
-**Goal:** Use Microsoft's AgentLightning to collect agent trajectories, gather user feedback, and iteratively optimize agent prompts via Automatic Prompt Optimization (APO).
-
-> **Constraint:** All agents use hosted LLM APIs (Cohere, OpenAI, Anthropic, etc.) — RL weight training (PPO/DPO/GRPO) is **not applicable** since we have no access to model weights. AgentLightning's **APO** algorithm works with API-only models: it uses an LLM to critique collected trajectories and rewrite prompts, requiring no weight access.
-
-**Overview:**
-Integrate AgentLightning to collect trajectory data from the 4-agent pipeline, gather user feedback as reward signals, and use APO to automatically improve agent system prompts over time.
-
-**Key Benefits:**
-- Automatic prompt improvement based on real deployment data (no manual prompt engineering)
-- Framework-agnostic integration (works with existing LangChain/LangGraph setup)
-- Selective optimization of individual agents or the entire multi-agent system
-- Collection of interaction data for analysis and evaluation
-
-**Architecture Approach:**
-
-```
-┌────────────────────────────────────────────────────────────┐
-│             Existing Agentic RAG System                     │
-│   Planner → Researcher → Reasoner → Synthesiser            │
-│              (LangChain/LangGraph)                          │
-└────────────────────────────────────────────────────────────┘
-                          │
-                          │ emit_span() / emit_reward()
-                          ▼
-┌────────────────────────────────────────────────────────────┐
-│              AgentLightning Layer                          │
-│  ┌──────────────────┐      ┌──────────────────┐           │
-│  │ Lightning Store  │ ←──→ │ Lightning Client  │          │
-│  │ (Trajectories)   │      │ (LLM Proxy)       │          │
-│  └──────────────────┘      └──────────────────┘           │
-│         │                            │                     │
-│         │ Trajectory Data            │ Optimized Prompts  │
-│         ▼                            ▼                     │
-│  ┌──────────────────┐      ┌──────────────────┐           │
-│  │ APO Engine       │      │ User Feedback     │          │
-│  │ (Prompt Rewrite) │      │ & Rewards         │          │
-│  └──────────────────┘      └──────────────────┘           │
-└────────────────────────────────────────────────────────────┘
-```
-
-**Implementation Strategy:**
-
-| Session | Focus | Token Budget | Key Deliverables |
-|---------|-------|--------------|------------------|
-| Session 9 | Foundation & Data Collection | ~80,000 | Install AGL, setup emitters, trajectory tracking |
-| Session 10 | Feedback & Reward System | ~80,000 | User feedback UI, automatic rewards, signal pipeline |
-| Session 11 | APO & Evaluation | ~80,000 | APO prompt optimization, evaluation framework, analytics |
-
----
-
-### Session 9: AgentLightning Foundation
-
-**Session Token Budget:** ~80,000 tokens  
-**Focus:** Install AgentLightning, setup basic infrastructure, and integrate emitters
-
----
-
-#### NRAG-060: AgentLightning Installation & Configuration
-
-**Priority:** P1 - High  
-**Token Estimate:** 8,000 tokens  
-**Status:** Backlog
-
-**Description:**  
-Install AgentLightning and configure the basic setup for the project.
-
-**Acceptance Criteria:**
-
-- [ ] <cite index="1-6">Install `agentlightning` package via pip</cite>
-- [ ] Update `pyproject.toml` with new dependency
-- [ ] Create configuration module for AgentLightning settings
-- [ ] Update `.env.example` with AgentLightning variables
-- [ ] Documentation of setup process
-
-**Implementation:**
-
-```toml
-# pyproject.toml additions
-[project]
-dependencies = [
-    # ... existing dependencies
-    "agentlightning>=0.2.1",  # Latest stable version
-]
-```
-
-```python
-# config/agl_settings.py
-from pydantic_settings import BaseSettings
-from pydantic import Field
-from typing import Optional
-
-class AgentLightningConfig(BaseSettings):
-    """Configuration for AgentLightning integration."""
-    
-    # Enable/disable AgentLightning
-    enabled: bool = Field(default=False, env="AGL_ENABLED")
-    
-    # Storage configuration
-    store_type: str = Field(default="file", env="AGL_STORE_TYPE")  # file, redis, mongodb
-    store_path: str = Field(default="./data/agl_store", env="AGL_STORE_PATH")
-    
-    # Training configuration
-    enable_training: bool = Field(default=False, env="AGL_ENABLE_TRAINING")
-    training_algorithm: str = Field(default="ppo", env="AGL_TRAINING_ALGORITHM")  # ppo, dpo, grpo
-    
-    # Agent selection for optimization
-    # Planner & Researcher: Track but don't optimize (use smaller Command-R model)
-    # Reasoner & Synthesiser: Optimize (use larger Command-R+/Command-A-Reasoning models)
-    optimize_planner: bool = Field(default=False, env="AGL_OPTIMIZE_PLANNER")
-    optimize_researcher: bool = Field(default=False, env="AGL_OPTIMIZE_RESEARCHER")
-    optimize_reasoner: bool = Field(default=True, env="AGL_OPTIMIZE_REASONER")
-    optimize_synthesiser: bool = Field(default=True, env="AGL_OPTIMIZE_SYNTHESISER")
-    
-    # Reward configuration
-    enable_user_feedback: bool = Field(default=True, env="AGL_ENABLE_USER_FEEDBACK")
-    automatic_reward: bool = Field(default=True, env="AGL_AUTOMATIC_REWARD")
-    
-    # LLM Proxy configuration
-    proxy_enabled: bool = Field(default=False, env="AGL_PROXY_ENABLED")
-    proxy_port: int = Field(default=8000, env="AGL_PROXY_PORT")
-    
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-
-agl_config = AgentLightningConfig()
-```
-
-```bash
-# .env.example additions
-# ===========================================
-# AgentLightning Configuration (Optional)
-# ===========================================
-
-# Enable AgentLightning integration for agent training
-AGL_ENABLED=false
-
-# Storage type: file, redis, mongodb
-AGL_STORE_TYPE=file
-AGL_STORE_PATH=./data/agl_store
-
-# Training configuration
-AGL_ENABLE_TRAINING=false
-AGL_TRAINING_ALGORITHM=ppo
-
-# Select which agents to optimize (Reasoner & Synthesiser recommended)
-AGL_OPTIMIZE_PLANNER=false
-AGL_OPTIMIZE_RESEARCHER=false
-AGL_OPTIMIZE_REASONER=true
-AGL_OPTIMIZE_SYNTHESISER=true
-
-# Reward configuration
-AGL_ENABLE_USER_FEEDBACK=true
-AGL_AUTOMATIC_REWARD=true
-
-# LLM Proxy (for training mode)
-AGL_PROXY_ENABLED=false
-AGL_PROXY_PORT=8000
-```
-
----
-
-#### NRAG-061: AgentLightning Store & Emitter Setup
-
-**Priority:** P1 - High  
-**Token Estimate:** 12,000 tokens  
-**Status:** Backlog
-
-**Description:**  
-<cite index="6-3,6-15">Implement the Lightning Store (unified interface for AgentLightning's core storage) and emitter infrastructure to capture agent interactions.</cite>
-
-**Acceptance Criteria:**
-
-- [ ] <cite index="6-3">Initialize Lightning Store with unified interface</cite>
-- [ ] <cite index="6-4,6-16">Create emitter wrapper for agent calls that emits any objects as spans to the store</cite>
-- [ ] Implement span tracking for each agent
-- [ ] Store metadata (query, response, timing, model used)
-- [ ] Basic querying and inspection utilities
-
-**Implementation:**
-
-```python
-# src/agl/__init__.py
-"""AgentLightning integration for continuous learning."""
-
-from src.agl.store_manager import get_store_manager, AGLStoreManager
-from src.agl.emitter import emit_agent_span, emit_user_reward
-from src.agl.trajectory import TrajectoryContext
-
-__all__ = [
-    "get_store_manager",
-    "AGLStoreManager",
-    "emit_agent_span",
-    "emit_user_reward",
-    "TrajectoryContext",
-]
-```
-
-```python
-# src/agl/store_manager.py
-import logging
-from typing import Optional
-from agentlightning.store import LightningStore, FileStore
-from config.agl_settings import agl_config
-
-logger = logging.getLogger(__name__)
-
-class AGLStoreManager:
-    """
-    Manages AgentLightning store for capturing agent interactions.
-    """
-    
-    def __init__(self):
-        self.store: Optional[LightningStore] = None
-        self.enabled = agl_config.enabled
-        
-        if self.enabled:
-            self._initialize_store()
-    
-    def _initialize_store(self):
-        """Initialize the Lightning Store."""
-        try:
-            if agl_config.store_type == "file":
-                self.store = FileStore(path=agl_config.store_path)
-                logger.info(f"Initialized FileStore at {agl_config.store_path}")
-            else:
-                raise ValueError(f"Unsupported store type: {agl_config.store_type}")
-        except Exception as e:
-            logger.error(f"Failed to initialize AgentLightning store: {e}")
-            self.enabled = False
-    
-    def is_enabled(self) -> bool:
-        """Check if AgentLightning is enabled and store is initialized."""
-        return self.enabled and self.store is not None
-    
-    def get_store(self) -> Optional[LightningStore]:
-        """Get the Lightning Store instance."""
-        return self.store
-    
-    def get_trajectory_count(self) -> int:
-        """Get the number of stored trajectories."""
-        if not self.is_enabled():
-            return 0
-        try:
-            return len(self.store.list_trajectories())
-        except Exception as e:
-            logger.error(f"Error getting trajectory count: {e}")
-            return 0
-
-# Global store manager instance
-_store_manager: Optional[AGLStoreManager] = None
-
-def get_store_manager() -> AGLStoreManager:
-    """Get the singleton store manager."""
-    global _store_manager
-    if _store_manager is None:
-        _store_manager = AGLStoreManager()
-    return _store_manager
-```
-
-```python
-# src/agl/emitter.py
-import logging
-from typing import Any, Dict, Optional
-from functools import wraps
-import time
-from agentlightning import emit_span, emit_reward
-
-from src.agl.store_manager import get_store_manager
-from config.agl_settings import agl_config
-
-logger = logging.getLogger(__name__)
-
-def emit_agent_span(
-    agent_name: str,
-    model: str,
-    should_optimize: bool = False
-):
-    """
-    Decorator to emit AgentLightning spans for agent calls.
-    
-    Minimal code change required: just wrap the existing agent function.
-    
-    Args:
-        agent_name: Name of the agent (planner, researcher, reasoner, synthesiser)
-        model: Model name used by the agent
-        should_optimize: Whether this agent should be optimized with RL
-    """
-    def decorator(func):
-        @wraps(func)
-        def wrapper(state: Dict[str, Any], *args, **kwargs) -> Dict[str, Any]:
-            store_manager = get_store_manager()
-            
-            # If AgentLightning is disabled, just call the function normally
-            if not store_manager.is_enabled():
-                return func(state, *args, **kwargs)
-            
-            # Extract query for context
-            query = state.get("query", "")
-            
-            # Prepare input for emission
-            span_input = {
-                "agent": agent_name,
-                "query": query,
-                "state_keys": list(state.keys()),
-            }
-            
-            # Start timing
-            start_time = time.time()
-            
-            try:
-                # Call the agent function
-                result = func(state, *args, **kwargs)
-                
-                # Calculate duration
-                duration = time.time() - start_time
-                
-                # Prepare output for emission
-                span_output = {
-                    "agent": agent_name,
-                    "duration": duration,
-                    "success": result.get("error") is None,
-                    "output_keys": list(result.keys()),
-                }
-                
-                # Emit the span if optimizable
-                if should_optimize:
-                    emit_span(
-                        name=f"{agent_name}_agent",
-                        input=span_input,
-                        output=span_output,
-                        model=model,
-                        metadata={
-                            "agent_type": agent_name,
-                            "optimizable": True,
-                            "duration_seconds": duration,
-                        }
-                    )
-                else:
-                    # Just log for non-optimizable agents
-                    logger.debug(f"{agent_name} completed in {duration:.2f}s")
-                
-                return result
-                
-            except Exception as e:
-                duration = time.time() - start_time
-                logger.error(f"Error in {agent_name}: {e}")
-                
-                # Emit error span
-                emit_span(
-                    name=f"{agent_name}_agent_error",
-                    input=span_input,
-                    output={"error": str(e), "duration": duration},
-                    model=model,
-                    metadata={"agent_type": agent_name, "error": True}
-                )
-                
-                raise
-        
-        return wrapper
-    return decorator
-
-
-def emit_user_reward(trajectory_id: str, reward: float, feedback: Optional[str] = None):
-    """
-    Emit user feedback as reward signal.
-    
-    Args:
-        trajectory_id: ID of the trajectory to reward
-        reward: Reward value (typically -1 to 1)
-        feedback: Optional textual feedback
-    """
-    store_manager = get_store_manager()
-    
-    if not store_manager.is_enabled():
-        logger.debug("AgentLightning disabled, skipping reward emission")
-        return
-    
-    try:
-        emit_reward(
-            trajectory_id=trajectory_id,
-            reward=reward,
-            metadata={"user_feedback": feedback} if feedback else {}
-        )
-        logger.info(f"Emitted reward {reward} for trajectory {trajectory_id}")
-    except Exception as e:
-        logger.error(f"Error emitting reward: {e}")
-```
-
----
-
-#### NRAG-062: Agent Integration with Emitters
-
-**Priority:** P0 - Critical  
-**Token Estimate:** 10,000 tokens  
-**Status:** Backlog
-
-**Description:**  
-<cite index="4-25">Integrate AgentLightning emitters into existing agent implementations without changing agent code.</cite>
-
-**Acceptance Criteria:**
-
-- [ ] Wrap existing agent functions with `emit_agent_span` decorator
-- [ ] Mark Reasoner and Synthesiser as optimizable (using larger models)
-- [ ] Planner and Researcher tracked but not optimized
-- [ ] Ensure backward compatibility (works with AGL disabled)
-- [ ] Test with AGL enabled and disabled
-- [ ] <cite index="1-1">Verify compatibility with existing LangChain/LangGraph setup</cite>
-
-**Example Integration:**
-
-```python
-# src/agents/reasoner.py (modified)
-from src.agl.emitter import emit_agent_span
-from config.agl_settings import agl_config
-
-# ... existing imports and code ...
-
-class ReasonerAgent:
-    # ... existing implementation ...
-    
-    @agent_trace("reasoner", model="command-a-reasoning")
-    @emit_agent_span(
-        agent_name="reasoner",
-        model="command-a-reasoning",
-        should_optimize=agl_config.optimize_reasoner
-    )
-    def __call__(self, state: AgentState) -> AgentState:
-        # Existing implementation unchanged
-        # ...
-        pass
-```
-
----
-
-#### NRAG-063: Trajectory Tracking
-
-**Priority:** P1 - High  
-**Token Estimate:** 10,000 tokens  
-**Status:** Backlog
-
-**Description:**  
-Implement trajectory tracking for complete user interactions from query to response.
-
-**Acceptance Criteria:**
-
-- [ ] Create trajectory context manager
-- [ ] Track complete query → response cycles
-- [ ] Store intermediate agent outputs
-- [ ] Link spans to trajectories
-- [ ] Implement trajectory querying utilities
-
-**Implementation:**
-
-```python
-# src/agl/trajectory.py
-import logging
-import uuid
-from typing import Dict, Any, Optional
-from datetime import datetime
-from agentlightning import start_trajectory, end_trajectory
-
-from src.agl.store_manager import get_store_manager
-
-logger = logging.getLogger(__name__)
-
-class TrajectoryContext:
-    """
-    Context manager for AgentLightning trajectories.
-    
-    Usage:
-        with TrajectoryContext(query="What is RAG?") as trajectory:
-            result = rag_system.query(query)
-    """
-    
-    def __init__(self, query: str, metadata: Optional[Dict[str, Any]] = None):
-        self.trajectory_id = str(uuid.uuid4())
-        self.query = query
-        self.metadata = metadata or {}
-        self.start_time = None
-        self.end_time = None
-        self.store_manager = get_store_manager()
-    
-    def __enter__(self):
-        if not self.store_manager.is_enabled():
-            return self
-        
-        self.start_time = datetime.now()
-        
-        try:
-            start_trajectory(
-                trajectory_id=self.trajectory_id,
-                metadata={
-                    "query": self.query,
-                    "start_time": self.start_time.isoformat(),
-                    **self.metadata
-                }
-            )
-            logger.info(f"Started trajectory {self.trajectory_id}")
-        except Exception as e:
-            logger.error(f"Error starting trajectory: {e}")
-        
-        return self
-    
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if not self.store_manager.is_enabled():
-            return
-        
-        self.end_time = datetime.now()
-        duration = (self.end_time - self.start_time).total_seconds()
-        
-        try:
-            end_trajectory(
-                trajectory_id=self.trajectory_id,
-                metadata={
-                    "end_time": self.end_time.isoformat(),
-                    "duration_seconds": duration,
-                    "success": exc_type is None,
-                    "error": str(exc_val) if exc_val else None
-                }
-            )
-            logger.info(f"Ended trajectory {self.trajectory_id} (duration: {duration:.2f}s)")
-        except Exception as e:
-            logger.error(f"Error ending trajectory: {e}")
-```
-
----
-
-### Session 9: User Feedback & Reward System
-
-**Session Token Budget:** ~80,000 tokens  
-**Focus:** Implement user feedback collection and reward signal generation
-
----
-
-#### NRAG-064: User Feedback Interface in Streamlit
-
-**Priority:** P0 - Critical  
-**Token Estimate:** 12,000 tokens  
-**Status:** Backlog
-
-**Description:**  
-Add user feedback collection UI to the Streamlit interface for reward signal generation.
-
-**Acceptance Criteria:**
-
-- [ ] Thumbs up/down feedback buttons after each response
-- [ ] Star rating system (1-5 stars)
-- [ ] Optional text feedback field
-- [ ] Visual feedback confirmation
-- [ ] Link feedback to trajectory ID
-- [ ] Store feedback in AgentLightning store
-
-**Implementation:**
-Add feedback widget below each response in `app.py` that:
-1. Displays rating options
-2. Captures user input
-3. Converts to reward signal (-1 to 1)
-4. Emits reward to AgentLightning
-
----
-
-#### NRAG-065: Automatic Reward Generation
-
-**Priority:** P1 - High  
-**Token Estimate:** 14,000 tokens  
-**Status:** Backlog
-
-**Description:**  
-<cite index="10-7">Implement automatic reward signal generation using Automatic Intermediate Rewarding that converts runtime signals into dense feedback, reducing sparse rewards in long workflows.</cite>
-
-**Acceptance Criteria:**
-
-- [ ] Success/failure detection based on errors
-- [ ] Response quality metrics (length, sources cited, coherence)
-- [ ] Retrieval quality (documents found, relevance scores)
-- [ ] Latency-based penalties for slow responses
-- [ ] Confidence scoring from Reasoner agent
-- [ ] Intermediate reward for each agent stage
-
-**Example Reward Signals:**
-
-```python
-# Automatic reward calculation examples
-
-# 1. Retrieval Quality (Researcher Agent)
-#    - Found relevant documents: +0.5
-#    - No documents found: -0.5
-#    - High rerank scores: +0.3
-
-# 2. Analysis Quality (Reasoner Agent)  
-#    - High confidence analysis: +0.4
-#    - Identified contradictions: +0.2
-#    - Low confidence: -0.2
-
-# 3. Response Quality (Synthesiser Agent)
-#    - Cited sources: +0.5
-#    - Complete answer: +0.5
-#    - Too short/incomplete: -0.3
-
-# 4. Overall Success
-#    - No errors: +0.5
-#    - Error occurred: -1.0
-```
-
----
-
-#### NRAG-066: Reward Signal Pipeline Integration
-
-**Priority:** P0 - Critical  
-**Token Estimate:** 10,000 tokens  
-**Status:** Backlog
-
-**Description:**  
-Integrate reward calculation and emission into the main workflow.
-
-**Acceptance Criteria:**
-
-- [ ] Automatic reward calculation after trajectory completion
-- [ ] Reward emission to AgentLightning store
-- [ ] User feedback override of automatic rewards
-- [ ] Intermediate reward emission for each agent
-- [ ] Logging and monitoring of reward signals
-- [ ] Configurable reward weights and thresholds
-
----
-
-### Session 11: APO Prompt Optimization & Evaluation
-
-**Session Token Budget:** ~80,000 tokens
-**Focus:** Automatic Prompt Optimization and evaluation framework
-
----
-
-#### NRAG-067: APO Prompt Optimization
-
-**Priority:** P1 - High
-**Token Estimate:** 16,000 tokens
-**Status:** Backlog
-
-**Description:**
-Use AgentLightning's Automatic Prompt Optimization (APO) to iteratively improve agent system prompts using collected trajectories and reward signals. APO works with API-only models — a critique LLM evaluates trajectory rollouts and rewrites prompts to improve performance.
-
-**Acceptance Criteria:**
-
-- [ ] APO configuration with AgentLightning
-- [ ] Critique LLM setup (e.g., GPT-4.1-mini or equivalent)
-- [ ] Prompt versioning and rollback
-- [ ] Optimization metrics and logging (reward improvement per iteration)
-- [ ] Integration with existing agent prompts (Planner, Researcher, Reasoner, Synthesiser)
-- [ ] Validation dataset to measure prompt quality before/after
-
-**Example APO Script:**
-
-```python
-# scripts/optimize_prompts.py
-from agentlightning import APOTrainer
-from src.agl.store_manager import get_store_manager
-from config.agl_settings import agl_config
-
-def optimize_reasoner_prompt():
-    """Optimize the Reasoner agent's system prompt using APO."""
-
-    store = get_store_manager().get_store()
-
-    trainer = APOTrainer(
-        store=store,
-        critique_model="gpt-4.1-mini",   # LLM for trajectory critique
-        rewrite_model="gpt-4.1-mini",    # LLM for prompt rewriting
-    )
-
-    # Run APO optimization loop
-    trainer.optimize(
-        agent_name="reasoner_agent",
-        num_iterations=10,
-        validation_tasks=load_validation_dataset(),
-    )
-
-    # Export optimized prompt
-    trainer.export_prompt("./prompts/reasoner_v2.txt")
-```
-
----
-
-#### NRAG-068: Evaluation Framework
-
-**Priority:** P1 - High  
-**Token Estimate:** 12,000 tokens  
-**Status:** Backlog
-
-**Description:**  
-Build evaluation framework to measure agent performance before and after training.
-
-**Acceptance Criteria:**
-
-- [ ] Test query dataset covering diverse topics
-- [ ] Evaluation metrics (accuracy, F1, BLEU, response quality)
-- [ ] Automated evaluation pipeline
-- [ ] Comparison between baseline and trained models
-- [ ] Visualization of improvement over time
-- [ ] Statistical significance testing
-
-**Metrics to Track:**
-- Task success rate
-- Average response quality score
-- Source citation accuracy
-- User satisfaction (from feedback)
-- Latency (inference time)
-- Retrieval precision and recall
-
----
-
-#### NRAG-069: Analytics & Monitoring Dashboard
-
-**Priority:** P2 - Medium  
-**Token Estimate:** 12,000 tokens  
-**Status:** Backlog
-
-**Description:**  
-Create analytics dashboard for monitoring AgentLightning training and performance.
-
-**Acceptance Criteria:**
-
-- [ ] Trajectory statistics (count, success rate, duration)
-- [ ] Reward signal distribution over time
-- [ ] Agent performance metrics over time
-- [ ] Training progress visualization
-- [ ] Integration with existing Streamlit UI
-- [ ] Export capabilities for detailed analysis
-
----
-
-#### NRAG-070: Documentation & Best Practices Guide
-
-**Priority:** P1 - High  
-**Token Estimate:** 8,000 tokens  
-**Status:** Backlog
-
-**Description:**  
-Create comprehensive documentation for AgentLightning integration.
-
-**Acceptance Criteria:**
-
-- [ ] Setup and configuration guide
-- [ ] Training workflow documentation
-- [ ] Best practices for reward signal design
-- [ ] Troubleshooting guide
-- [ ] Example training scenarios
-- [ ] Performance optimization tips
-
-**Documentation Sections:**
-1. Overview and motivation
-2. Installation and configuration
-3. Data collection and trajectory tracking
-4. Reward engineering guidelines
-5. Training pipeline setup
-6. Model evaluation and deployment
-7. Common issues and solutions
-
----
-
-### AgentLightning Epic Summary
-
-**Total Sessions:** 3 (Sessions 9-11)
-**Total Token Budget:** ~240,000 tokens
-**Timeline:** Progressive implementation with validation at each stage
-
-**Task Breakdown:**
-
-| Task ID | Task | Tokens | Priority | Session |
-|---------|------|--------|----------|----------|
-| NRAG-060 | Installation & Configuration | 8,000 | P1 | 9 |
-| NRAG-061 | Store & Emitter Setup | 12,000 | P1 | 9 |
-| NRAG-062 | Agent Integration | 10,000 | P0 | 9 |
-| NRAG-063 | Trajectory Tracking | 10,000 | P1 | 9 |
-| NRAG-064 | User Feedback UI | 12,000 | P0 | 10 |
-| NRAG-065 | Automatic Rewards | 14,000 | P1 | 10 |
-| NRAG-066 | Reward Pipeline | 10,000 | P0 | 10 |
-| NRAG-067 | APO Prompt Optimization | 16,000 | P1 | 11 |
-| NRAG-068 | Evaluation Framework | 12,000 | P1 | 11 |
-| NRAG-069 | Analytics Dashboard | 12,000 | P2 | 11 |
-| NRAG-070 | Documentation | 8,000 | P1 | 11 |
-| **Total** | | **124,000** | | |
-
-**Key Milestones:**
-1. **Foundation (Session 9):** Basic infrastructure and emitter integration (~40,000 tokens)
-2. **Feedback System (Session 10):** User feedback and reward generation (~36,000 tokens)
-3. **APO & Evaluation (Session 11):** Prompt optimization and analytics (~48,000 tokens)
-
-**Architecture Impact:**
-- Minimal changes to existing agent code
-- Optional feature (can be disabled via config)
-- Leverages existing LangChain/LangGraph infrastructure
-- Selective optimization: Reasoner & Synthesiser prioritized for prompt tuning
-- **API-compatible:** APO works with hosted LLM APIs (no model weight access required)
-
-**Expected Outcomes:**
-- Continuous prompt improvement based on real deployment data
-- Data-driven optimization based on real user queries
-- Reduced reliance on manual prompt engineering
-- Better handling of edge cases through learned prompt patterns
-- Measurable quality improvements tracked via evaluation framework
-
----
-
 ### Epic: Dynamic Tool Agents with A2A Protocol (Completed - Session 8)
 
 > **Completed 2026-02-11.** All items implemented with 34/34 tests passing. See `src/tools/` for implementation.
@@ -4743,6 +3936,813 @@ Expand support to Google Gemini (Pro/Flash) and open-weights models like Qwen 2.
 2.  **Open Models (Qwen/Deepseek)**
     *   Support generic OpenAI-compatible endpoints (e.g., OpenRouter, vLLM)
     *   Handle specific prompting requirements for DeepSeek R1 ("Thinking" tags)
+
+---
+
+### Epic: AgentLightning Integration for Prompt Optimization
+
+**Goal:** Use Microsoft's AgentLightning to collect agent trajectories, gather user feedback, and iteratively optimize agent prompts via Automatic Prompt Optimization (APO).
+
+> **Constraint:** All agents use hosted LLM APIs (Cohere, OpenAI, Anthropic, etc.) — RL weight training (PPO/DPO/GRPO) is **not applicable** since we have no access to model weights. AgentLightning's **APO** algorithm works with API-only models: it uses an LLM to critique collected trajectories and rewrite prompts, requiring no weight access.
+
+**Overview:**
+Integrate AgentLightning to collect trajectory data from the 4-agent pipeline, gather user feedback as reward signals, and use APO to automatically improve agent system prompts over time.
+
+**Key Benefits:**
+- Automatic prompt improvement based on real deployment data (no manual prompt engineering)
+- Framework-agnostic integration (works with existing LangChain/LangGraph setup)
+- Selective optimization of individual agents or the entire multi-agent system
+- Collection of interaction data for analysis and evaluation
+
+**Architecture Approach:**
+
+```
+┌────────────────────────────────────────────────────────────┐
+│             Existing Agentic RAG System                     │
+│   Planner → Researcher → Reasoner → Synthesiser            │
+│              (LangChain/LangGraph)                          │
+└────────────────────────────────────────────────────────────┘
+                          │
+                          │ emit_span() / emit_reward()
+                          ▼
+┌────────────────────────────────────────────────────────────┐
+│              AgentLightning Layer                          │
+│  ┌──────────────────┐      ┌──────────────────┐           │
+│  │ Lightning Store  │ ←──→ │ Lightning Client  │          │
+│  │ (Trajectories)   │      │ (LLM Proxy)       │          │
+│  └──────────────────┘      └──────────────────┘           │
+│         │                            │                     │
+│         │ Trajectory Data            │ Optimized Prompts  │
+│         ▼                            ▼                     │
+│  ┌──────────────────┐      ┌──────────────────┐           │
+│  │ APO Engine       │      │ User Feedback     │          │
+│  │ (Prompt Rewrite) │      │ & Rewards         │          │
+│  └──────────────────┘      └──────────────────┘           │
+└────────────────────────────────────────────────────────────┘
+```
+
+**Implementation Strategy:**
+
+| Session | Focus | Token Budget | Key Deliverables |
+|---------|-------|--------------|------------------|
+| Session 9 | Foundation & Data Collection | ~80,000 | Install AGL, setup emitters, trajectory tracking |
+| Session 10 | Feedback & Reward System | ~80,000 | User feedback UI, automatic rewards, signal pipeline |
+| Session 11 | APO & Evaluation | ~80,000 | APO prompt optimization, evaluation framework, analytics |
+
+---
+
+### Session 9: AgentLightning Foundation
+
+**Session Token Budget:** ~80,000 tokens  
+**Focus:** Install AgentLightning, setup basic infrastructure, and integrate emitters
+
+---
+
+#### NRAG-063: AgentLightning Installation & Configuration
+
+**Priority:** P1 - High  
+**Token Estimate:** 8,000 tokens  
+**Status:** Backlog
+
+**Description:**  
+Install AgentLightning and configure the basic setup for the project.
+
+**Acceptance Criteria:**
+
+- [ ] <cite index="1-6">Install `agentlightning` package via pip</cite>
+- [ ] Update `pyproject.toml` with new dependency
+- [ ] Create configuration module for AgentLightning settings
+- [ ] Update `.env.example` with AgentLightning variables
+- [ ] Documentation of setup process
+
+**Implementation:**
+
+```toml
+# pyproject.toml additions
+[project]
+dependencies = [
+    # ... existing dependencies
+    "agentlightning>=0.2.1",  # Latest stable version
+]
+```
+
+```python
+# config/agl_settings.py
+from pydantic_settings import BaseSettings
+from pydantic import Field
+from typing import Optional
+
+class AgentLightningConfig(BaseSettings):
+    """Configuration for AgentLightning integration."""
+    
+    # Enable/disable AgentLightning
+    enabled: bool = Field(default=False, env="AGL_ENABLED")
+    
+    # Storage configuration
+    store_type: str = Field(default="file", env="AGL_STORE_TYPE")  # file, redis, mongodb
+    store_path: str = Field(default="./data/agl_store", env="AGL_STORE_PATH")
+    
+    # Training configuration
+    enable_training: bool = Field(default=False, env="AGL_ENABLE_TRAINING")
+    training_algorithm: str = Field(default="ppo", env="AGL_TRAINING_ALGORITHM")  # ppo, dpo, grpo
+    
+    # Agent selection for optimization
+    # Planner & Researcher: Track but don't optimize (use smaller Command-R model)
+    # Reasoner & Synthesiser: Optimize (use larger Command-R+/Command-A-Reasoning models)
+    optimize_planner: bool = Field(default=False, env="AGL_OPTIMIZE_PLANNER")
+    optimize_researcher: bool = Field(default=False, env="AGL_OPTIMIZE_RESEARCHER")
+    optimize_reasoner: bool = Field(default=True, env="AGL_OPTIMIZE_REASONER")
+    optimize_synthesiser: bool = Field(default=True, env="AGL_OPTIMIZE_SYNTHESISER")
+    
+    # Reward configuration
+    enable_user_feedback: bool = Field(default=True, env="AGL_ENABLE_USER_FEEDBACK")
+    automatic_reward: bool = Field(default=True, env="AGL_AUTOMATIC_REWARD")
+    
+    # LLM Proxy configuration
+    proxy_enabled: bool = Field(default=False, env="AGL_PROXY_ENABLED")
+    proxy_port: int = Field(default=8000, env="AGL_PROXY_PORT")
+    
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+
+agl_config = AgentLightningConfig()
+```
+
+```bash
+# .env.example additions
+# ===========================================
+# AgentLightning Configuration (Optional)
+# ===========================================
+
+# Enable AgentLightning integration for agent training
+AGL_ENABLED=false
+
+# Storage type: file, redis, mongodb
+AGL_STORE_TYPE=file
+AGL_STORE_PATH=./data/agl_store
+
+# Training configuration
+AGL_ENABLE_TRAINING=false
+AGL_TRAINING_ALGORITHM=ppo
+
+# Select which agents to optimize (Reasoner & Synthesiser recommended)
+AGL_OPTIMIZE_PLANNER=false
+AGL_OPTIMIZE_RESEARCHER=false
+AGL_OPTIMIZE_REASONER=true
+AGL_OPTIMIZE_SYNTHESISER=true
+
+# Reward configuration
+AGL_ENABLE_USER_FEEDBACK=true
+AGL_AUTOMATIC_REWARD=true
+
+# LLM Proxy (for training mode)
+AGL_PROXY_ENABLED=false
+AGL_PROXY_PORT=8000
+```
+
+---
+
+#### NRAG-064: AgentLightning Store & Emitter Setup
+
+**Priority:** P1 - High  
+**Token Estimate:** 12,000 tokens  
+**Status:** Backlog
+
+**Description:**  
+<cite index="6-3,6-15">Implement the Lightning Store (unified interface for AgentLightning's core storage) and emitter infrastructure to capture agent interactions.</cite>
+
+**Acceptance Criteria:**
+
+- [ ] <cite index="6-3">Initialize Lightning Store with unified interface</cite>
+- [ ] <cite index="6-4,6-16">Create emitter wrapper for agent calls that emits any objects as spans to the store</cite>
+- [ ] Implement span tracking for each agent
+- [ ] Store metadata (query, response, timing, model used)
+- [ ] Basic querying and inspection utilities
+
+**Implementation:**
+
+```python
+# src/agl/__init__.py
+"""AgentLightning integration for continuous learning."""
+
+from src.agl.store_manager import get_store_manager, AGLStoreManager
+from src.agl.emitter import emit_agent_span, emit_user_reward
+from src.agl.trajectory import TrajectoryContext
+
+__all__ = [
+    "get_store_manager",
+    "AGLStoreManager",
+    "emit_agent_span",
+    "emit_user_reward",
+    "TrajectoryContext",
+]
+```
+
+```python
+# src/agl/store_manager.py
+import logging
+from typing import Optional
+from agentlightning.store import LightningStore, FileStore
+from config.agl_settings import agl_config
+
+logger = logging.getLogger(__name__)
+
+class AGLStoreManager:
+    """
+    Manages AgentLightning store for capturing agent interactions.
+    """
+    
+    def __init__(self):
+        self.store: Optional[LightningStore] = None
+        self.enabled = agl_config.enabled
+        
+        if self.enabled:
+            self._initialize_store()
+    
+    def _initialize_store(self):
+        """Initialize the Lightning Store."""
+        try:
+            if agl_config.store_type == "file":
+                self.store = FileStore(path=agl_config.store_path)
+                logger.info(f"Initialized FileStore at {agl_config.store_path}")
+            else:
+                raise ValueError(f"Unsupported store type: {agl_config.store_type}")
+        except Exception as e:
+            logger.error(f"Failed to initialize AgentLightning store: {e}")
+            self.enabled = False
+    
+    def is_enabled(self) -> bool:
+        """Check if AgentLightning is enabled and store is initialized."""
+        return self.enabled and self.store is not None
+    
+    def get_store(self) -> Optional[LightningStore]:
+        """Get the Lightning Store instance."""
+        return self.store
+    
+    def get_trajectory_count(self) -> int:
+        """Get the number of stored trajectories."""
+        if not self.is_enabled():
+            return 0
+        try:
+            return len(self.store.list_trajectories())
+        except Exception as e:
+            logger.error(f"Error getting trajectory count: {e}")
+            return 0
+
+# Global store manager instance
+_store_manager: Optional[AGLStoreManager] = None
+
+def get_store_manager() -> AGLStoreManager:
+    """Get the singleton store manager."""
+    global _store_manager
+    if _store_manager is None:
+        _store_manager = AGLStoreManager()
+    return _store_manager
+```
+
+```python
+# src/agl/emitter.py
+import logging
+from typing import Any, Dict, Optional
+from functools import wraps
+import time
+from agentlightning import emit_span, emit_reward
+
+from src.agl.store_manager import get_store_manager
+from config.agl_settings import agl_config
+
+logger = logging.getLogger(__name__)
+
+def emit_agent_span(
+    agent_name: str,
+    model: str,
+    should_optimize: bool = False
+):
+    """
+    Decorator to emit AgentLightning spans for agent calls.
+    
+    Minimal code change required: just wrap the existing agent function.
+    
+    Args:
+        agent_name: Name of the agent (planner, researcher, reasoner, synthesiser)
+        model: Model name used by the agent
+        should_optimize: Whether this agent should be optimized with RL
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapper(state: Dict[str, Any], *args, **kwargs) -> Dict[str, Any]:
+            store_manager = get_store_manager()
+            
+            # If AgentLightning is disabled, just call the function normally
+            if not store_manager.is_enabled():
+                return func(state, *args, **kwargs)
+            
+            # Extract query for context
+            query = state.get("query", "")
+            
+            # Prepare input for emission
+            span_input = {
+                "agent": agent_name,
+                "query": query,
+                "state_keys": list(state.keys()),
+            }
+            
+            # Start timing
+            start_time = time.time()
+            
+            try:
+                # Call the agent function
+                result = func(state, *args, **kwargs)
+                
+                # Calculate duration
+                duration = time.time() - start_time
+                
+                # Prepare output for emission
+                span_output = {
+                    "agent": agent_name,
+                    "duration": duration,
+                    "success": result.get("error") is None,
+                    "output_keys": list(result.keys()),
+                }
+                
+                # Emit the span if optimizable
+                if should_optimize:
+                    emit_span(
+                        name=f"{agent_name}_agent",
+                        input=span_input,
+                        output=span_output,
+                        model=model,
+                        metadata={
+                            "agent_type": agent_name,
+                            "optimizable": True,
+                            "duration_seconds": duration,
+                        }
+                    )
+                else:
+                    # Just log for non-optimizable agents
+                    logger.debug(f"{agent_name} completed in {duration:.2f}s")
+                
+                return result
+                
+            except Exception as e:
+                duration = time.time() - start_time
+                logger.error(f"Error in {agent_name}: {e}")
+                
+                # Emit error span
+                emit_span(
+                    name=f"{agent_name}_agent_error",
+                    input=span_input,
+                    output={"error": str(e), "duration": duration},
+                    model=model,
+                    metadata={"agent_type": agent_name, "error": True}
+                )
+                
+                raise
+        
+        return wrapper
+    return decorator
+
+
+def emit_user_reward(trajectory_id: str, reward: float, feedback: Optional[str] = None):
+    """
+    Emit user feedback as reward signal.
+    
+    Args:
+        trajectory_id: ID of the trajectory to reward
+        reward: Reward value (typically -1 to 1)
+        feedback: Optional textual feedback
+    """
+    store_manager = get_store_manager()
+    
+    if not store_manager.is_enabled():
+        logger.debug("AgentLightning disabled, skipping reward emission")
+        return
+    
+    try:
+        emit_reward(
+            trajectory_id=trajectory_id,
+            reward=reward,
+            metadata={"user_feedback": feedback} if feedback else {}
+        )
+        logger.info(f"Emitted reward {reward} for trajectory {trajectory_id}")
+    except Exception as e:
+        logger.error(f"Error emitting reward: {e}")
+```
+
+---
+
+#### NRAG-065: Agent Integration with Emitters
+
+**Priority:** P0 - Critical  
+**Token Estimate:** 10,000 tokens  
+**Status:** Backlog
+
+**Description:**  
+<cite index="4-25">Integrate AgentLightning emitters into existing agent implementations without changing agent code.</cite>
+
+**Acceptance Criteria:**
+
+- [ ] Wrap existing agent functions with `emit_agent_span` decorator
+- [ ] Mark Reasoner and Synthesiser as optimizable (using larger models)
+- [ ] Planner and Researcher tracked but not optimized
+- [ ] Ensure backward compatibility (works with AGL disabled)
+- [ ] Test with AGL enabled and disabled
+- [ ] <cite index="1-1">Verify compatibility with existing LangChain/LangGraph setup</cite>
+
+**Example Integration:**
+
+```python
+# src/agents/reasoner.py (modified)
+from src.agl.emitter import emit_agent_span
+from config.agl_settings import agl_config
+
+# ... existing imports and code ...
+
+class ReasonerAgent:
+    # ... existing implementation ...
+    
+    @agent_trace("reasoner", model="command-a-reasoning")
+    @emit_agent_span(
+        agent_name="reasoner",
+        model="command-a-reasoning",
+        should_optimize=agl_config.optimize_reasoner
+    )
+    def __call__(self, state: AgentState) -> AgentState:
+        # Existing implementation unchanged
+        # ...
+        pass
+```
+
+---
+
+#### NRAG-066: Trajectory Tracking
+
+**Priority:** P1 - High  
+**Token Estimate:** 10,000 tokens  
+**Status:** Backlog
+
+**Description:**  
+Implement trajectory tracking for complete user interactions from query to response.
+
+**Acceptance Criteria:**
+
+- [ ] Create trajectory context manager
+- [ ] Track complete query → response cycles
+- [ ] Store intermediate agent outputs
+- [ ] Link spans to trajectories
+- [ ] Implement trajectory querying utilities
+
+**Implementation:**
+
+```python
+# src/agl/trajectory.py
+import logging
+import uuid
+from typing import Dict, Any, Optional
+from datetime import datetime
+from agentlightning import start_trajectory, end_trajectory
+
+from src.agl.store_manager import get_store_manager
+
+logger = logging.getLogger(__name__)
+
+class TrajectoryContext:
+    """
+    Context manager for AgentLightning trajectories.
+    
+    Usage:
+        with TrajectoryContext(query="What is RAG?") as trajectory:
+            result = rag_system.query(query)
+    """
+    
+    def __init__(self, query: str, metadata: Optional[Dict[str, Any]] = None):
+        self.trajectory_id = str(uuid.uuid4())
+        self.query = query
+        self.metadata = metadata or {}
+        self.start_time = None
+        self.end_time = None
+        self.store_manager = get_store_manager()
+    
+    def __enter__(self):
+        if not self.store_manager.is_enabled():
+            return self
+        
+        self.start_time = datetime.now()
+        
+        try:
+            start_trajectory(
+                trajectory_id=self.trajectory_id,
+                metadata={
+                    "query": self.query,
+                    "start_time": self.start_time.isoformat(),
+                    **self.metadata
+                }
+            )
+            logger.info(f"Started trajectory {self.trajectory_id}")
+        except Exception as e:
+            logger.error(f"Error starting trajectory: {e}")
+        
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if not self.store_manager.is_enabled():
+            return
+        
+        self.end_time = datetime.now()
+        duration = (self.end_time - self.start_time).total_seconds()
+        
+        try:
+            end_trajectory(
+                trajectory_id=self.trajectory_id,
+                metadata={
+                    "end_time": self.end_time.isoformat(),
+                    "duration_seconds": duration,
+                    "success": exc_type is None,
+                    "error": str(exc_val) if exc_val else None
+                }
+            )
+            logger.info(f"Ended trajectory {self.trajectory_id} (duration: {duration:.2f}s)")
+        except Exception as e:
+            logger.error(f"Error ending trajectory: {e}")
+```
+
+---
+
+### Session 9: User Feedback & Reward System
+
+**Session Token Budget:** ~80,000 tokens  
+**Focus:** Implement user feedback collection and reward signal generation
+
+---
+
+#### NRAG-067: User Feedback Interface in Streamlit
+
+**Priority:** P0 - Critical  
+**Token Estimate:** 12,000 tokens  
+**Status:** Backlog
+
+**Description:**  
+Add user feedback collection UI to the Streamlit interface for reward signal generation.
+
+**Acceptance Criteria:**
+
+- [ ] Thumbs up/down feedback buttons after each response
+- [ ] Star rating system (1-5 stars)
+- [ ] Optional text feedback field
+- [ ] Visual feedback confirmation
+- [ ] Link feedback to trajectory ID
+- [ ] Store feedback in AgentLightning store
+
+**Implementation:**
+Add feedback widget below each response in `app.py` that:
+1. Displays rating options
+2. Captures user input
+3. Converts to reward signal (-1 to 1)
+4. Emits reward to AgentLightning
+
+---
+
+#### NRAG-068: Automatic Reward Generation
+
+**Priority:** P1 - High  
+**Token Estimate:** 14,000 tokens  
+**Status:** Backlog
+
+**Description:**  
+<cite index="10-7">Implement automatic reward signal generation using Automatic Intermediate Rewarding that converts runtime signals into dense feedback, reducing sparse rewards in long workflows.</cite>
+
+**Acceptance Criteria:**
+
+- [ ] Success/failure detection based on errors
+- [ ] Response quality metrics (length, sources cited, coherence)
+- [ ] Retrieval quality (documents found, relevance scores)
+- [ ] Latency-based penalties for slow responses
+- [ ] Confidence scoring from Reasoner agent
+- [ ] Intermediate reward for each agent stage
+
+**Example Reward Signals:**
+
+```python
+# Automatic reward calculation examples
+
+# 1. Retrieval Quality (Researcher Agent)
+#    - Found relevant documents: +0.5
+#    - No documents found: -0.5
+#    - High rerank scores: +0.3
+
+# 2. Analysis Quality (Reasoner Agent)  
+#    - High confidence analysis: +0.4
+#    - Identified contradictions: +0.2
+#    - Low confidence: -0.2
+
+# 3. Response Quality (Synthesiser Agent)
+#    - Cited sources: +0.5
+#    - Complete answer: +0.5
+#    - Too short/incomplete: -0.3
+
+# 4. Overall Success
+#    - No errors: +0.5
+#    - Error occurred: -1.0
+```
+
+---
+
+#### NRAG-069: Reward Signal Pipeline Integration
+
+**Priority:** P0 - Critical  
+**Token Estimate:** 10,000 tokens  
+**Status:** Backlog
+
+**Description:**  
+Integrate reward calculation and emission into the main workflow.
+
+**Acceptance Criteria:**
+
+- [ ] Automatic reward calculation after trajectory completion
+- [ ] Reward emission to AgentLightning store
+- [ ] User feedback override of automatic rewards
+- [ ] Intermediate reward emission for each agent
+- [ ] Logging and monitoring of reward signals
+- [ ] Configurable reward weights and thresholds
+
+---
+
+### Session 11: APO Prompt Optimization & Evaluation
+
+**Session Token Budget:** ~80,000 tokens
+**Focus:** Automatic Prompt Optimization and evaluation framework
+
+---
+
+#### NRAG-070: APO Prompt Optimization
+
+**Priority:** P1 - High
+**Token Estimate:** 16,000 tokens
+**Status:** Backlog
+
+**Description:**
+Use AgentLightning's Automatic Prompt Optimization (APO) to iteratively improve agent system prompts using collected trajectories and reward signals. APO works with API-only models — a critique LLM evaluates trajectory rollouts and rewrites prompts to improve performance.
+
+**Acceptance Criteria:**
+
+- [ ] APO configuration with AgentLightning
+- [ ] Critique LLM setup (e.g., GPT-4.1-mini or equivalent)
+- [ ] Prompt versioning and rollback
+- [ ] Optimization metrics and logging (reward improvement per iteration)
+- [ ] Integration with existing agent prompts (Planner, Researcher, Reasoner, Synthesiser)
+- [ ] Validation dataset to measure prompt quality before/after
+
+**Example APO Script:**
+
+```python
+# scripts/optimize_prompts.py
+from agentlightning import APOTrainer
+from src.agl.store_manager import get_store_manager
+from config.agl_settings import agl_config
+
+def optimize_reasoner_prompt():
+    """Optimize the Reasoner agent's system prompt using APO."""
+
+    store = get_store_manager().get_store()
+
+    trainer = APOTrainer(
+        store=store,
+        critique_model="gpt-4.1-mini",   # LLM for trajectory critique
+        rewrite_model="gpt-4.1-mini",    # LLM for prompt rewriting
+    )
+
+    # Run APO optimization loop
+    trainer.optimize(
+        agent_name="reasoner_agent",
+        num_iterations=10,
+        validation_tasks=load_validation_dataset(),
+    )
+
+    # Export optimized prompt
+    trainer.export_prompt("./prompts/reasoner_v2.txt")
+```
+
+---
+
+#### NRAG-071: Evaluation Framework
+
+**Priority:** P1 - High  
+**Token Estimate:** 12,000 tokens  
+**Status:** Backlog
+
+**Description:**  
+Build evaluation framework to measure agent performance before and after training.
+
+**Acceptance Criteria:**
+
+- [ ] Test query dataset covering diverse topics
+- [ ] Evaluation metrics (accuracy, F1, BLEU, response quality)
+- [ ] Automated evaluation pipeline
+- [ ] Comparison between baseline and trained models
+- [ ] Visualization of improvement over time
+- [ ] Statistical significance testing
+
+**Metrics to Track:**
+- Task success rate
+- Average response quality score
+- Source citation accuracy
+- User satisfaction (from feedback)
+- Latency (inference time)
+- Retrieval precision and recall
+
+---
+
+#### NRAG-072: Analytics & Monitoring Dashboard
+
+**Priority:** P2 - Medium  
+**Token Estimate:** 12,000 tokens  
+**Status:** Backlog
+
+**Description:**  
+Create analytics dashboard for monitoring AgentLightning training and performance.
+
+**Acceptance Criteria:**
+
+- [ ] Trajectory statistics (count, success rate, duration)
+- [ ] Reward signal distribution over time
+- [ ] Agent performance metrics over time
+- [ ] Training progress visualization
+- [ ] Integration with existing Streamlit UI
+- [ ] Export capabilities for detailed analysis
+
+---
+
+#### NRAG-073: Documentation & Best Practices Guide
+
+**Priority:** P1 - High  
+**Token Estimate:** 8,000 tokens  
+**Status:** Backlog
+
+**Description:**  
+Create comprehensive documentation for AgentLightning integration.
+
+**Acceptance Criteria:**
+
+- [ ] Setup and configuration guide
+- [ ] Training workflow documentation
+- [ ] Best practices for reward signal design
+- [ ] Troubleshooting guide
+- [ ] Example training scenarios
+- [ ] Performance optimization tips
+
+**Documentation Sections:**
+1. Overview and motivation
+2. Installation and configuration
+3. Data collection and trajectory tracking
+4. Reward engineering guidelines
+5. Training pipeline setup
+6. Model evaluation and deployment
+7. Common issues and solutions
+
+---
+
+### AgentLightning Epic Summary
+
+**Total Sessions:** 3 (Sessions 9-11)
+**Total Token Budget:** ~240,000 tokens
+**Timeline:** Progressive implementation with validation at each stage
+
+**Task Breakdown:**
+
+| Task ID | Task | Tokens | Priority | Session |
+|---------|------|--------|----------|----------|
+| NRAG-063 | Installation & Configuration | 8,000 | P1 | 9 |
+| NRAG-064 | Store & Emitter Setup | 12,000 | P1 | 9 |
+| NRAG-065 | Agent Integration | 10,000 | P0 | 9 |
+| NRAG-066 | Trajectory Tracking | 10,000 | P1 | 9 |
+| NRAG-067 | User Feedback UI | 12,000 | P0 | 10 |
+| NRAG-068 | Automatic Rewards | 14,000 | P1 | 10 |
+| NRAG-069 | Reward Pipeline | 10,000 | P0 | 10 |
+| NRAG-070 | APO Prompt Optimization | 16,000 | P1 | 11 |
+| NRAG-071 | Evaluation Framework | 12,000 | P1 | 11 |
+| NRAG-072 | Analytics Dashboard | 12,000 | P2 | 11 |
+| NRAG-073 | Documentation | 8,000 | P1 | 11 |
+| **Total** | | **124,000** | | |
+
+**Key Milestones:**
+1. **Foundation (Session 9):** Basic infrastructure and emitter integration (~40,000 tokens)
+2. **Feedback System (Session 10):** User feedback and reward generation (~36,000 tokens)
+3. **APO & Evaluation (Session 11):** Prompt optimization and analytics (~48,000 tokens)
+
+**Architecture Impact:**
+- Minimal changes to existing agent code
+- Optional feature (can be disabled via config)
+- Leverages existing LangChain/LangGraph infrastructure
+- Selective optimization: Reasoner & Synthesiser prioritized for prompt tuning
+- **API-compatible:** APO works with hosted LLM APIs (no model weight access required)
+
+**Expected Outcomes:**
+- Continuous prompt improvement based on real deployment data
+- Data-driven optimization based on real user queries
+- Reduced reliance on manual prompt engineering
+- Better handling of edge cases through learned prompt patterns
+- Measurable quality improvements tracked via evaluation framework
 
 ---
 
