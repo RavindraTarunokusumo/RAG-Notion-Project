@@ -2,7 +2,11 @@
 
 from src.tools.base import AgentCard, ToolAgent, ToolResult
 from src.tools.client import A2AToolClient
-from src.tools.registry import ToolRegistry, get_tool_registry, register_default_agents
+from src.tools.registry import (
+    ToolRegistry,
+    get_tool_registry,
+    register_default_agents,
+)
 
 __all__ = [
     "AgentCard",
