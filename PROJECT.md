@@ -3170,7 +3170,7 @@ Create comprehensive README with setup and usage instructions.
 | NRAG-054 | Settings & Configuration Panel | 6,000 | P2 | [x] Done |
 | NRAG-055 | Extended Model Configuration | 8,000 | P2 | Backlog |
 | NRAG-056 | Session Title Generation | 5,000 | P3 | Backlog |
-| NRAG-057 | Session Autosave & History | 6,000 | P2 | Backlog |
+| NRAG-057 | Session Auto-save & History | 6,000 | P2 | Backlog |
 | NRAG-058 | Manual Reference Linking UI | 10,000 | P3 | Backlog |
 | NRAG-059 | Knowledge Base Management Buttons | 8,000 | P2 | Backlog |
 
@@ -3734,7 +3734,7 @@ def generate_session_title(first_prompt: str) -> str:
 
 ---
 
-#### NRAG-057: Session Autosave & History
+#### NRAG-057: Session Auto-save & History
 
 **Priority:** P2 - Medium
 **Token Estimate:** 6,000 tokens
@@ -3746,12 +3746,10 @@ Enhance session management to automatically save chat history to disk/database i
 **Requirements:**
 
 1.  **Autosave Trigger**
-    *   Save after every `search_node` or `synthesiser_node` completion
-    *   Or simply save after the final answer is generated
-
-2.  **Seamless UX**
-    *   Do not block the UI during save
-    *   Visual indicator "Saving..." -> "Saved"
+    * Remove the sidebar Save button for sessions.
+    * Auto-save immediately when a user submits a query (persist prompt).
+    * Auto-save again when assistant output generation completes (persist response).
+    * Ensure behavior is consistent in both streaming and non-streaming flows.
 
 ---
 

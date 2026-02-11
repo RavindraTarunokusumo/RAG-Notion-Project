@@ -65,7 +65,7 @@ Branch: `epic/streamlit`
 |----|------|----------|-------|
 | NRAG-055 | Extended Model Configuration | P2 | Per-agent model selectors in settings panel |
 | NRAG-056 | Session Title Generation | P3 | LLM-generated session titles from first query |
-| NRAG-057 | Session Autosave & History | P2 | Auto-save after each response, no data loss on refresh. Remove manual Save button. |
+| NRAG-057 | Session Auto-save & History | P2 | Auto-save after each response, no data loss on refresh. Remove manual Save button. |
 | NRAG-058 | Manual Reference Linking UI | P3 | Let users manually link/tag references |
 | NRAG-059 | Knowledge Base Management Buttons | P2 | UI controls for test connection, ingest, and rebuild operations |
 
