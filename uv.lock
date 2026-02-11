@@ -2825,6 +2825,7 @@ dependencies = [
     { name = "pymupdf" },
     { name = "python-dotenv" },
     { name = "streamlit" },
+    { name = "sympy" },
 ]
 
 [package.dev-dependencies]
@@ -2849,6 +2850,7 @@ requires-dist = [
     { name = "pymupdf", specifier = ">=1.26.7" },
     { name = "python-dotenv", specifier = ">=1.0.1" },
     { name = "streamlit", specifier = ">=1.31.0" },
+    { name = "sympy", specifier = ">=1.13.0" },
 ]
 
 [package.metadata.requires-dev]
