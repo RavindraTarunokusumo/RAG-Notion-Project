@@ -1,15 +1,23 @@
 # Notion Agentic RAG
 
-A multi-agent RAG system that answers research questions using your Notion knowledge base and arXiv papers w/ [LangSmith](https://docs.langchain.com/langsmith/home) tracing for observability.
+A multi-agent RAG system that answers research questions using your Notion knowledge base and arXiv papers. Features dynamic tool agents, real-time streaming, and [LangSmith](https://docs.langchain.com/langsmith/home) tracing.
 
 ## What It Does
 
-Asks an LLM team to research your question:
+**Core Pipeline**: Four specialized agents collaborate to answer your questions:
 
-- **Planner**: Breaks your question into sub-tasks
-- **Researcher**: Finds relevant documents from your knowledge base
-- **Reasoner**: Analyzes what was found (uses Cohere's reasoning model)
-- **Synthesiser**: Writes a cited answer
+- **Planner**: Decomposes questions into sub-tasks
+- **Researcher**: Retrieves relevant documents with reranking
+- **Reasoner**: Analyzes evidence using reasoning models
+- **Synthesiser**: Generates cited answers
+
+**Tool Agents** (optional, runtime-invoked via A2A protocol):
+
+- **Web Searcher**: DuckDuckGo for current information
+- **Code Executor**: Sandboxed Python execution
+- **Citation Validator**: Verifies arXiv papers
+- **Math Solver**: SymPy symbolic computation
+- **Diagram Generator**: Mermaid diagrams via LLM
 
 ## Setup
 
@@ -70,11 +78,14 @@ Launch the Streamlit chat interface:
 streamlit run app.py
 ```
 
-The web interface provides:
-- 💬 Interactive chat with message history
-- 📚 Rich source display with citations
-- 🔄 Real-time agent pipeline status
-- 🎨 User-friendly UI
+**Features**:
+- 💬 Interactive chat with history
+- 📚 Rich citations with source cards
+- 🔄 Live agent progress tracking
+- ⚡ Real-time streaming responses
+- 💾 Session persistence (JSON/Markdown export)
+- ⚙️ Dynamic settings (models, retrieval params)
+- 🛠️ Tool agent status monitoring
 
 ### Command Line Interface
 
@@ -107,13 +118,43 @@ The system will plan, retrieve, analyze, and generate an answer with sources.
 
 ```
 src/
-├── agents/          # Planner, Researcher, Reasoner, Synthesiser
-├── loaders/         # Notion + arXiv document loading
-├── orchestrator/    # LangGraph workflow
-└── rag/             # Embeddings, vector store, retrieval
+├── agents/          # Core 4-agent pipeline
+├── tools/           # A2A tool agents (web search, code exec, math, etc.)
+├── loaders/         # Notion + arXiv ingestion
+├── orchestrator/    # LangGraph workflow + state management
+├── rag/             # Embeddings, vector store, retrieval
+└── utils/           # Session manager, tracing, helpers
+```
+
+## Architecture
+
+**Multi-Agent Pipeline** (LangGraph orchestration):
+```
+User Query → Planner → Researcher → Reasoner → Synthesiser → Answer
+                ↓           ↓           ↓           ↓
+            Tool Agents (invoked on-demand via A2A)
+```
+
+**Tool Agent Discovery**: Agents can dynamically discover and invoke tool agents via Agent Cards (A2A protocol). Tool results are tracked in `AgentState.tool_results`.
+
+## Configuration
+
+Tool agents can be enabled/disabled in `config/settings.py`:
+
+```python
+tool_agents = ToolAgentConfig(
+    enabled=True,
+    web_searcher_enabled=True,
+    code_executor_enabled=True,
+    citation_validator_enabled=True,
+    math_solver_enabled=True,
+    diagram_generator_enabled=True,
+)
 ```
 
 ## Notes
 
-- Uses a monkeypatch in `llm_factory.py` to handle Cohere's reasoning model responses (see `AGENT.md` for details)
-- Rate limits are handled with delays for trial API keys (adjust as you wish if you're in paid tier)
+- **Cohere Reasoning Patch**: `llm_factory.py` merges Thinking+Text blocks from V2 API (see `AGENTS.md`)
+- **Rate Limiting**: Embedding delays configured for free-tier Cohere API
+- **Sandboxing**: Code executor uses subprocess isolation with import whitelisting
+- **Session Storage**: All sessions saved to `./data/sessions/` with auto-generated names
