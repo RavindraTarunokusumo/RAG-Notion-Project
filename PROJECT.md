@@ -3172,6 +3172,8 @@ Create comprehensive README with setup and usage instructions.
 | NRAG-056 | Session Title Generation | 5,000 | P3 | Backlog |
 | NRAG-057 | Session Autosave & History | 6,000 | P2 | Backlog |
 | NRAG-058 | Manual Reference Linking UI | 10,000 | P3 | Backlog |
+| NRAG-059 | Knowledge Base Management Buttons | 8,000 | P2 | Backlog |
+| NRAG-071 | Auto-Save Session on Prompt + Response | 8,000 | P1 | Backlog |
 
 ---
 
@@ -3874,6 +3876,52 @@ with st.expander("🛠️ System Management"):
 - Consider adding vector store statistics (document count) display
 - Test connection logic from `main.py:81-103`
 - Ingestion logic from `src/ingest.py:10-48`
+
+---
+
+#### NRAG-071: Auto-Save Session on Prompt + Response
+
+**Priority:** P1 - High
+**Token Estimate:** 8,000 tokens
+**Status:** Backlog
+
+**Description:**
+Implement automatic Streamlit session persistence and remove the manual save workflow. Sessions should be saved transparently without user intervention.
+
+**Requirements:**
+
+1.  **Remove Manual Save**
+    *   Remove the sidebar Save button for sessions
+    *   All persistence happens automatically
+
+2.  **Auto-Save on Prompt Submit**
+    *   Save immediately when a user submits a query (persist the prompt)
+    *   Ensures the user's input is never lost, even on crash or refresh
+
+3.  **Auto-Save on Response Completion**
+    *   Save again when assistant output generation completes (persist the response)
+    *   Captures the full assistant answer including sources and metadata
+
+4.  **Streaming & Non-Streaming Consistency**
+    *   Ensure auto-save behavior is consistent in both streaming and non-streaming flows
+    *   In streaming mode, save after the final streamed chunk is received
+    *   In non-streaming mode, save after the pipeline returns
+
+**Acceptance Criteria:**
+
+- [ ] Sidebar Save button is removed
+- [ ] Session is persisted immediately on prompt submission
+- [ ] Session is persisted again on response completion
+- [ ] Works correctly in both streaming and non-streaming modes
+- [ ] No data loss on browser refresh mid-conversation
+- [ ] No noticeable UI lag from auto-save operations
+
+**Technical Notes:**
+
+- Modifies `app.py` (save triggers) and `src/utils/session_manager.py` (if save logic changes)
+- Supersedes the manual save flow from NRAG-051; complements NRAG-057 (Session Autosave & History)
+- Use `session_manager.save_session()` at two points: after `st.session_state.messages.append(user_msg)` and after final answer is appended
+- Consider debouncing or async save to avoid blocking the UI thread
 
 ---
 
