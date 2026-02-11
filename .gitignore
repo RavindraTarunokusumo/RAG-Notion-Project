@@ -160,8 +160,8 @@ venv.bak/
 # site
 /site
 
-# AGENT.md
-AGENT.md
+# AGENTS.md
+AGENTS.md
 
 # mypy
 .mypy_cache/
