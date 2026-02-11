@@ -1,14 +1,12 @@
 """Tests for the A2A Tool Agent Framework (NRAG-027 through NRAG-033)."""
 
 import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from src.tools.base import AgentCard, ToolAgent, ToolResult
 from src.tools.client import A2AToolClient
 from src.tools.registry import ToolRegistry
-
 
 # --- Fixtures ---
 
@@ -127,7 +125,7 @@ class TestToolAgent:
     def test_default_can_handle(self):
         agent = MockToolAgent(confidence=0.0)
         # Override to test base default
-        ToolAgent.can_handle(agent, "anything") == 0.0
+        assert ToolAgent.can_handle(agent, "anything") == 0.0
 
     def test_default_health_check(self):
         agent = MockToolAgent()
