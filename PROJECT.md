@@ -3171,8 +3171,7 @@ Create comprehensive README with setup and usage instructions.
 | NRAG-055 | Extended Model Configuration | 8,000 | P2 | Backlog |
 | NRAG-056 | Session Title Generation | 5,000 | P3 | Backlog |
 | NRAG-057 | Session Auto-save & History | 6,000 | P2 | Backlog |
-| NRAG-058 | Manual Reference Linking UI | 10,000 | P3 | Backlog |
-| NRAG-059 | Knowledge Base Management Buttons | 8,000 | P2 | Backlog |
+| NRAG-058 | Knowledge Base Management Buttons | 8,000 | P2 | Backlog |
 
 ---
 
@@ -3753,37 +3752,7 @@ Enhance session management to automatically save chat history to disk/database i
 
 ---
 
-#### NRAG-058: Manual Reference Linking UI
-
-**Priority:** P3 - Low
-**Token Estimate:** 10,000 tokens
-**Status:** Backlog
-
-**Description:**
-Allow users to manually link or tag references in the chat interface, enabling them to associate specific sources with particular parts of the conversation.
-
-**Requirements:**
-
-1.  **Manual Source Tagging**
-    *   UI control to manually add/link sources to a response
-    *   Search/browse available sources from knowledge base
-    *   Associate sources with specific response sections
-
-2.  **Reference Management**
-    *   View linked references for each message
-    *   Edit or remove manual links
-    *   Visual distinction between auto-linked and manually-linked sources
-
-**Acceptance Criteria:**
-
-- [ ] Users can manually add source links to responses
-- [ ] Manual links are persisted in session history
-- [ ] Manual links are visually distinguished from automatic citations
-- [ ] Interface for managing (add/remove/edit) manual references
-
----
-
-#### NRAG-059: Knowledge Base Management Buttons
+#### NRAG-058: Knowledge Base Management Buttons
 
 **Priority:** P2 - Medium
 **Token Estimate:** 8,000 tokens
@@ -3910,11 +3879,11 @@ with st.expander("🛠️ System Management"):
 
 | ID | Item | Token Estimate | Priority |
 |----|------|----------------|----------|
-| NRAG-060 | Multi-Provider LLM Abstraction | 15,000 | P2 |
-| NRAG-061 | OpenAI & Anthropic Integration | 12,000 | P2 |
-| NRAG-062 | Gemini, Qwen & Deepseek Support | 15,000 | P2 |
+| NRAG-059 | Multi-Provider LLM Abstraction | 15,000 | P2 |
+| NRAG-060 | OpenAI & Anthropic Integration | 12,000 | P2 |
+| NRAG-061 | Gemini, Qwen & Deepseek Support | 15,000 | P2 |
 
-#### NRAG-060: Multi-Provider LLM Abstraction
+#### NRAG-059: Multi-Provider LLM Abstraction
 
 **Priority:** P2 - Medium
 **Token Estimate:** 15,000 tokens
@@ -3929,7 +3898,7 @@ Refactor `src/agents/llm_factory.py` to support multiple LLM providers beyond Co
     *   Support `Provider` enum (Cohere, OpenAI, Anthropic, etc.)
     *   Unified interface for Model parameters (temperature, max_tokens)
 
-#### NRAG-061: OpenAI & Anthropic Integration
+#### NRAG-060: OpenAI & Anthropic Integration
 
 **Priority:** P2 - Medium
 **Token Estimate:** 12,000 tokens
@@ -3948,7 +3917,7 @@ Implement specific integration for OpenAI (GPT-5 for HW/MW, GPT-4o for LW) and A
     *   Support `langchain-anthropic`
     *   Leverage large context windows for "Synthesiser"
 
-#### NRAG-062: Gemini, Qwen & Deepseek Support
+#### NRAG-061: Gemini, Qwen & Deepseek Support
 
 **Priority:** P2 - Medium
 **Token Estimate:** 15,000 tokens
@@ -4027,7 +3996,7 @@ Integrate AgentLightning to collect trajectory data from the 4-agent pipeline, g
 
 ---
 
-#### NRAG-063: AgentLightning Installation & Configuration
+#### NRAG-062: AgentLightning Installation & Configuration
 
 **Priority:** P1 - High  
 **Token Estimate:** 8,000 tokens  
@@ -4132,7 +4101,7 @@ AGL_PROXY_PORT=8000
 
 ---
 
-#### NRAG-064: AgentLightning Store & Emitter Setup
+#### NRAG-063: AgentLightning Store & Emitter Setup
 
 **Priority:** P1 - High  
 **Token Estimate:** 12,000 tokens  
@@ -4361,7 +4330,7 @@ def emit_user_reward(trajectory_id: str, reward: float, feedback: Optional[str] 
 
 ---
 
-#### NRAG-065: Agent Integration with Emitters
+#### NRAG-064: Agent Integration with Emitters
 
 **Priority:** P0 - Critical  
 **Token Estimate:** 10,000 tokens  
@@ -4405,7 +4374,7 @@ class ReasonerAgent:
 
 ---
 
-#### NRAG-066: Trajectory Tracking
+#### NRAG-065: Trajectory Tracking
 
 **Priority:** P1 - High  
 **Token Estimate:** 10,000 tokens  
@@ -4505,7 +4474,7 @@ class TrajectoryContext:
 
 ---
 
-#### NRAG-067: User Feedback Interface in Streamlit
+#### NRAG-066: User Feedback Interface in Streamlit
 
 **Priority:** P0 - Critical  
 **Token Estimate:** 12,000 tokens  
@@ -4532,7 +4501,7 @@ Add feedback widget below each response in `app.py` that:
 
 ---
 
-#### NRAG-068: Automatic Reward Generation
+#### NRAG-067: Automatic Reward Generation
 
 **Priority:** P1 - High  
 **Token Estimate:** 14,000 tokens  
@@ -4577,7 +4546,7 @@ Add feedback widget below each response in `app.py` that:
 
 ---
 
-#### NRAG-069: Reward Signal Pipeline Integration
+#### NRAG-068: Reward Signal Pipeline Integration
 
 **Priority:** P0 - Critical  
 **Token Estimate:** 10,000 tokens  
@@ -4604,7 +4573,7 @@ Integrate reward calculation and emission into the main workflow.
 
 ---
 
-#### NRAG-070: APO Prompt Optimization
+#### NRAG-069: APO Prompt Optimization
 
 **Priority:** P1 - High
 **Token Estimate:** 16,000 tokens
@@ -4654,7 +4623,7 @@ def optimize_reasoner_prompt():
 
 ---
 
-#### NRAG-071: Evaluation Framework
+#### NRAG-070: Evaluation Framework
 
 **Priority:** P1 - High  
 **Token Estimate:** 12,000 tokens  
@@ -4682,7 +4651,7 @@ Build evaluation framework to measure agent performance before and after trainin
 
 ---
 
-#### NRAG-072: Analytics & Monitoring Dashboard
+#### NRAG-071: Analytics & Monitoring Dashboard
 
 **Priority:** P2 - Medium  
 **Token Estimate:** 12,000 tokens  
@@ -4702,7 +4671,7 @@ Create analytics dashboard for monitoring AgentLightning training and performanc
 
 ---
 
-#### NRAG-073: Documentation & Best Practices Guide
+#### NRAG-072: Documentation & Best Practices Guide
 
 **Priority:** P1 - High  
 **Token Estimate:** 8,000 tokens  
@@ -4741,17 +4710,17 @@ Create comprehensive documentation for AgentLightning integration.
 
 | Task ID | Task | Tokens | Priority | Session |
 |---------|------|--------|----------|----------|
-| NRAG-063 | Installation & Configuration | 8,000 | P1 | 9 |
-| NRAG-064 | Store & Emitter Setup | 12,000 | P1 | 9 |
-| NRAG-065 | Agent Integration | 10,000 | P0 | 9 |
-| NRAG-066 | Trajectory Tracking | 10,000 | P1 | 9 |
-| NRAG-067 | User Feedback UI | 12,000 | P0 | 10 |
-| NRAG-068 | Automatic Rewards | 14,000 | P1 | 10 |
-| NRAG-069 | Reward Pipeline | 10,000 | P0 | 10 |
-| NRAG-070 | APO Prompt Optimization | 16,000 | P1 | 11 |
-| NRAG-071 | Evaluation Framework | 12,000 | P1 | 11 |
-| NRAG-072 | Analytics Dashboard | 12,000 | P2 | 11 |
-| NRAG-073 | Documentation | 8,000 | P1 | 11 |
+| NRAG-062 | Installation & Configuration | 8,000 | P1 | 9 |
+| NRAG-063 | Store & Emitter Setup | 12,000 | P1 | 9 |
+| NRAG-064 | Agent Integration | 10,000 | P0 | 9 |
+| NRAG-065 | Trajectory Tracking | 10,000 | P1 | 9 |
+| NRAG-066 | User Feedback UI | 12,000 | P0 | 10 |
+| NRAG-067 | Automatic Rewards | 14,000 | P1 | 10 |
+| NRAG-068 | Reward Pipeline | 10,000 | P0 | 10 |
+| NRAG-069 | APO Prompt Optimization | 16,000 | P1 | 11 |
+| NRAG-070 | Evaluation Framework | 12,000 | P1 | 11 |
+| NRAG-071 | Analytics Dashboard | 12,000 | P2 | 11 |
+| NRAG-072 | Documentation | 8,000 | P1 | 11 |
 | **Total** | | **124,000** | | |
 
 **Key Milestones:**
