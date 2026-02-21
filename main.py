@@ -5,13 +5,10 @@ from datetime import datetime
 
 from config.settings import settings
 from src.orchestrator.graph import create_rag_graph
+from src.orchestrator.state import build_initial_state
+from src.utils.debugging import configure_logging, debug_run
 from src.utils.tracing import initialize_tracing
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
 logger = logging.getLogger(__name__)
 
 def run_agentic_rag(query: str):
@@ -30,25 +27,16 @@ def run_agentic_rag(query: str):
         sys.exit(1)
     
     # Initial State
-    initial_state = {
-        "query": query,
-        "sub_tasks": [],
-        "planning_reasoning": "",
-        "retrieved_docs": [],
-        "retrieval_metadata": {},
-        "analysis": [],
-        "overall_assessment": "",
-        "final_answer": "",
-        "sources": [],
-        "error": None,
-        "current_agent": "start"
-    }
+    initial_state = build_initial_state(query)
     
     # Execute Graph
     start_time = datetime.now()
     try:
         # Use invoke for a single run
-        result = app.invoke(initial_state)
+        with debug_run(query=query, initial_state=initial_state, mode="invoke") as trace_session:
+            result = app.invoke(initial_state)
+            if trace_session is not None:
+                trace_session.record_run_end(result)
         
         duration = (datetime.now() - start_time).total_seconds()
         
@@ -118,8 +106,8 @@ def main():
     
     # Handle Verbosity
     if args.verbose:
-        logging.getLogger().setLevel(logging.DEBUG)
-        logging.getLogger("httpx").setLevel(logging.WARNING) # Reduce noise
+        settings.debug.log_level = "DEBUG"
+    configure_logging(app_name="main")
     
     # Dispatch
     if args.test_conn:
