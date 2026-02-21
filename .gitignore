@@ -160,6 +160,9 @@ venv.bak/
 # site
 /site
 
+# Worktrees
+.worktrees
+
 # AGENTS.md
 AGENTS.md
 
