@@ -13,14 +13,12 @@ import streamlit as st
 
 from config.settings import settings
 from src.orchestrator.graph import create_rag_graph
+from src.orchestrator.state import build_initial_state
+from src.utils.debugging import configure_logging, debug_run, merge_state
 from src.utils.session_manager import get_session_manager
 from src.utils.tracing import initialize_tracing
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
+configure_logging(app_name="app")
 logger = logging.getLogger(__name__)
 
 # Page config
@@ -296,90 +294,93 @@ def _get_agent_emoji(agent: str) -> str:
 def process_query_streaming(prompt: str):
     """
     Process a user query through the RAG pipeline with streaming.
-    
+
     Yields status updates and final result.
     """
-    initial_state = {
-        "query": prompt,
-        "sub_tasks": [],
-        "planning_reasoning": "",
-        "retrieved_docs": [],
-        "retrieval_metadata": {},
-        "analysis": [],
-        "overall_assessment": "",
-        "final_answer": "",
-        "sources": [],
-        "error": None,
-        "current_agent": "start",
-    }
-    
+    initial_state = build_initial_state(prompt)
+
     # Track progress locally
     completed_agents = []
     agent_outcomes = {}
-    
+
     # 1. Start with Planner
     yield {
         "type": "progress",
         "current_agent": "planner",
         "completed_agents": [],
         "agent_outcomes": {},
-        "message": "🎯 Planner is analyzing your query..."
+        "message": "Planner is analyzing your query...",
     }
 
     try:
         final_result = None
+        accumulated_state = dict(initial_state)
 
-        # Use stream mode to get intermediate updates
-        for event in st.session_state.graph.stream(initial_state):
-            # Event is a dict with node name as key
-            for node_name, node_output in event.items():
-                
-                # Mark current as completed
-                if node_name not in completed_agents:
-                    completed_agents.append(node_name)
-                
-                # Extract interesting stats/outcomes
-                outcome = ""
-                if node_name == "planner":
-                    sub_tasks = node_output.get("sub_tasks", [])
-                    outcome = f"Created {len(sub_tasks)} sub-tasks"
-                elif node_name == "researcher":
-                    docs = node_output.get("retrieved_docs", [])
-                    outcome = f"Found {len(docs)} documents"
-                elif node_name == "reasoner":
-                    analysis = node_output.get("analysis", [])
-                    outcome = f"Analyzed {len(analysis)} items"
-                elif node_name == "synthesiser":
-                    outcome = "Drafted response"
-                
-                agent_outcomes[node_name] = outcome
-                
-                # Determine next agent
-                next_agent = "end"
-                if node_name == "planner":
-                    next_agent = "researcher"
-                elif node_name == "researcher":
-                    next_agent = "reasoner"
-                elif node_name == "reasoner":
-                    next_agent = "synthesiser"
-                
-                # Yield progress update
-                yield {
-                    "type": "progress",
-                    "current_agent": next_agent,
-                    "completed_agents": completed_agents.copy(),
-                    "agent_outcomes": agent_outcomes.copy(),
-                    "message": f"{_get_agent_emoji(next_agent)} {next_agent.title()} running..." if next_agent != "end" else "✨ Finalizing..."
-                }
+        with debug_run(
+            query=prompt,
+            initial_state=initial_state,
+            mode="stream",
+        ) as trace_session:
+            # Use stream mode to get intermediate updates
+            for event in st.session_state.graph.stream(initial_state):
+                # Event is a dict with node name as key
+                for node_name, node_output in event.items():
+                    accumulated_state = merge_state(accumulated_state, node_output)
 
-                # Store final state
-                final_result = node_output
+                    # Mark current as completed
+                    if node_name not in completed_agents:
+                        completed_agents.append(node_name)
+
+                    # Extract interesting stats/outcomes
+                    outcome = ""
+                    if node_name == "planner":
+                        sub_tasks = node_output.get("sub_tasks", [])
+                        outcome = f"Created {len(sub_tasks)} sub-tasks"
+                    elif node_name == "researcher":
+                        docs = node_output.get("retrieved_docs", [])
+                        outcome = f"Found {len(docs)} documents"
+                    elif node_name == "reasoner":
+                        analysis = node_output.get("analysis", [])
+                        outcome = f"Analyzed {len(analysis)} items"
+                    elif node_name == "synthesiser":
+                        outcome = "Drafted response"
+
+                    agent_outcomes[node_name] = outcome
+
+                    # Determine next agent
+                    next_agent = "end"
+                    if node_name == "planner":
+                        next_agent = "researcher"
+                    elif node_name == "researcher":
+                        next_agent = "reasoner"
+                    elif node_name == "reasoner":
+                        next_agent = "synthesiser"
+
+                    # Yield progress update
+                    yield {
+                        "type": "progress",
+                        "current_agent": next_agent,
+                        "completed_agents": completed_agents.copy(),
+                        "agent_outcomes": agent_outcomes.copy(),
+                        "message": (
+                            f"{_get_agent_emoji(next_agent)} "
+                            f"{next_agent.title()} running..."
+                            if next_agent != "end"
+                            else "Finalizing..."
+                        ),
+                    }
+
+                    # Store merged final state
+                    final_result = accumulated_state
+
+            if trace_session is not None:
+                trace_session.record_run_end(final_result or accumulated_state)
 
         # Check for errors in final result
         if final_result and final_result.get("error"):
             yield {
                 "type": "error",
-                "message": f"❌ Pipeline Error: {final_result['error']}",
+                "message": f"Pipeline Error: {final_result['error']}",
                 "sources": [],
             }
         elif final_result:
@@ -392,7 +393,7 @@ def process_query_streaming(prompt: str):
         else:
             yield {
                 "type": "error",
-                "message": "❌ No response from pipeline",
+                "message": "No response from pipeline",
                 "sources": [],
             }
 
@@ -400,35 +401,30 @@ def process_query_streaming(prompt: str):
         logger.exception("Error processing query")
         yield {
             "type": "error",
-            "message": f"❌ System Error: {str(e)}",
+            "message": f"System Error: {str(e)}",
             "sources": [],
         }
 
 
 def process_query(prompt: str):
     """Process a user query through the RAG pipeline (non-streaming)."""
-    initial_state = {
-        "query": prompt,
-        "sub_tasks": [],
-        "planning_reasoning": "",
-        "retrieved_docs": [],
-        "retrieval_metadata": {},
-        "analysis": [],
-        "overall_assessment": "",
-        "final_answer": "",
-        "sources": [],
-        "error": None,
-        "current_agent": "start",
-    }
+    initial_state = build_initial_state(prompt)
 
     try:
         # Execute graph
-        result = st.session_state.graph.invoke(initial_state)
+        with debug_run(
+            query=prompt,
+            initial_state=initial_state,
+            mode="invoke",
+        ) as trace_session:
+            result = st.session_state.graph.invoke(initial_state)
+            if trace_session is not None:
+                trace_session.record_run_end(result)
 
         if result.get("error"):
             return {
                 "success": False,
-                "message": f"❌ Pipeline Error: {result['error']}",
+                "message": f"Pipeline Error: {result['error']}",
                 "sources": [],
             }
 
@@ -442,10 +438,9 @@ def process_query(prompt: str):
         logger.exception("Error processing query")
         return {
             "success": False,
-            "message": f"❌ System Error: {str(e)}",
+            "message": f"System Error: {str(e)}",
             "sources": [],
         }
-
 
 def main():
     """Main application."""
@@ -689,6 +684,12 @@ def main():
                 settings.models.planner_model = planner_model
                 settings.retrieval_k = retrieval_k
                 settings.rerank_top_n = rerank_top_n
+                settings.debug.log_level = (
+                    "DEBUG" if verbose_mode else "INFO"
+                )
+                logging.getLogger().setLevel(
+                    logging.DEBUG if verbose_mode else logging.INFO
+                )
                 
                 # Force graph re-init if model changed (though simple update is fine for this architecture)
                 # But retriever uses settings at runtime, so it's fine.

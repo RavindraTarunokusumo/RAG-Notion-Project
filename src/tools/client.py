@@ -2,10 +2,12 @@
 
 import asyncio
 import logging
+import time
 from typing import Any
 
 from src.tools.base import AgentCard, ToolResult
 from src.tools.registry import ToolRegistry
+from src.utils.debugging import log_trace_event
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +25,14 @@ class A2AToolClient:
         # Update cache
         for card in cards:
             self._card_cache[card.name] = card
+        log_trace_event(
+            "tool_discovery",
+            {
+                "capability": capability,
+                "agents": [card.name for card in cards],
+                "count": len(cards),
+            },
+        )
         return cards
 
     async def invoke_tool(
@@ -30,34 +40,96 @@ class A2AToolClient:
     ) -> ToolResult:
         """Invoke a tool agent by name with timeout handling."""
         agent = self._registry.get_agent(agent_name)
+        started = time.perf_counter()
         if agent is None:
-            return ToolResult(
+            result = ToolResult(
                 success=False,
                 data=None,
                 error=f"Agent '{agent_name}' not found in registry",
                 agent_name=agent_name,
             )
+            log_trace_event(
+                "tool_invoke_end",
+                {
+                    "agent_name": agent_name,
+                    "success": result.success,
+                    "error": result.error,
+                    "duration_ms": 0.0,
+                    "task": task,
+                },
+            )
+            return result
 
+        log_trace_event(
+            "tool_invoke_start",
+            {
+                "agent_name": agent_name,
+                "timeout": timeout,
+                "task": task,
+            },
+        )
         try:
             result = await asyncio.wait_for(agent.execute(task), timeout=timeout)
             result.agent_name = agent_name
+            log_trace_event(
+                "tool_invoke_end",
+                {
+                    "agent_name": agent_name,
+                    "success": result.success,
+                    "error": result.error,
+                    "metadata": result.metadata,
+                    "duration_ms": round(
+                        (time.perf_counter() - started) * 1000,
+                        3,
+                    ),
+                    "task": task,
+                },
+            )
             return result
         except TimeoutError:
             logger.warning(f"Tool agent '{agent_name}' timed out after {timeout}s")
-            return ToolResult(
+            result = ToolResult(
                 success=False,
                 data=None,
                 error=f"Agent '{agent_name}' timed out after {timeout}s",
                 agent_name=agent_name,
             )
+            log_trace_event(
+                "tool_invoke_end",
+                {
+                    "agent_name": agent_name,
+                    "success": result.success,
+                    "error": result.error,
+                    "duration_ms": round(
+                        (time.perf_counter() - started) * 1000,
+                        3,
+                    ),
+                    "task": task,
+                },
+            )
+            return result
         except Exception as e:
             logger.exception(f"Tool agent '{agent_name}' failed")
-            return ToolResult(
+            result = ToolResult(
                 success=False,
                 data=None,
                 error=str(e),
                 agent_name=agent_name,
             )
+            log_trace_event(
+                "tool_invoke_end",
+                {
+                    "agent_name": agent_name,
+                    "success": result.success,
+                    "error": result.error,
+                    "duration_ms": round(
+                        (time.perf_counter() - started) * 1000,
+                        3,
+                    ),
+                    "task": task,
+                },
+            )
+            return result
 
     def select_best_agent(
         self, task_description: str, available_agents: list[AgentCard]
@@ -79,4 +151,13 @@ class A2AToolClient:
             logger.debug(
                 f"Selected agent '{best_card.name}' with confidence {best_score:.2f}"
             )
+        log_trace_event(
+            "tool_selection",
+            {
+                "task_description": task_description,
+                "selected_agent": best_card.name if best_card else None,
+                "score": best_score,
+                "candidate_count": len(available_agents),
+            },
+        )
         return best_card

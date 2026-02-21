@@ -54,3 +54,21 @@ class AgentState(TypedDict):
     # Error handling
     error: str | None
     current_agent: str
+
+
+def build_initial_state(query: str) -> AgentState:
+    """Build a complete initial state for a new graph run."""
+    return {
+        "query": query,
+        "sub_tasks": [],
+        "planning_reasoning": "",
+        "retrieved_docs": [],
+        "retrieval_metadata": {},
+        "analysis": [],
+        "overall_assessment": "",
+        "final_answer": "",
+        "sources": [],
+        "tool_results": [],
+        "error": None,
+        "current_agent": "start",
+    }

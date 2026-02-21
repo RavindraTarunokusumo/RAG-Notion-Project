@@ -12,6 +12,12 @@ class ToolAgentConfig(BaseModel):
     diagram_generator_enabled: bool = True
 
 
+class DebugConfig(BaseModel):
+    enabled: bool = True
+    log_dir: str = "./logs"
+    log_level: str = "INFO"
+
+
 class CohereModelConfig(BaseModel):
     planner_model: str = "command-r-08-2024"
     researcher_model: str = "command-r-08-2024"
@@ -54,5 +60,8 @@ class Settings(BaseSettings):
 
     # Tool Agents
     tool_agents: ToolAgentConfig = ToolAgentConfig()
+
+    # Debugging & observability
+    debug: DebugConfig = DebugConfig()
 
 settings = Settings()
