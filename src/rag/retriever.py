@@ -1,6 +1,6 @@
 import logging
 
-from langchain.retrievers import ContextualCompressionRetriever
+from langchain_classic.retrievers import ContextualCompressionRetriever
 from langchain_community.document_compressors.dashscope_rerank import (
     DashScopeRerank,
 )
@@ -45,4 +45,3 @@ def get_retriever(use_rerank: bool = True) -> BaseRetriever:
     except Exception as e:
         logger.error(f"Failed to initialize Reranker, falling back to base retriever: {e}")
         return base_retriever
-
