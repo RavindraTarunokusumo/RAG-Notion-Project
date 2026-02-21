@@ -1,21 +1,21 @@
 # Notion Agentic RAG Architecture
 
-## 1. System Overview
+## System Overview
 
-This repository implements a multi-agent RAG system with two primary runtime paths:
+The repository has two runtime paths:
 
-- **Ingestion path**: Notion/arXiv content is loaded, transformed, chunked, and indexed into Chroma.
-- **Query path**: A LangGraph orchestrator runs four agents in sequence to produce a cited answer.
+- Ingestion path: Notion and arXiv content is loaded, normalized, chunked, and indexed in Chroma.
+- Query path: LangGraph orchestrates Planner, Researcher, Reasoner, and Synthesiser to produce a cited response.
 
-Core implementation lives under `src/`:
+Core implementation:
 
-- `src/orchestrator/` for graph + shared state
-- `src/agents/` for planner/researcher/reasoner/synthesiser
-- `src/rag/` for embeddings, vector store, retriever, splitting utilities
-- `src/loaders/` for Notion + arXiv ingestion
-- `src/tools/` for A2A-style tool agent framework
+- `src/orchestrator/` for graph and shared state
+- `src/agents/` for the core four agents
+- `src/rag/` for embeddings, vector store, retrieval, and chunking
+- `src/loaders/` for Notion and arXiv ingestion
+- `src/tools/` for A2A-style tool agents
 
-## 2. High-Level Topology
+## High-Level Topology
 
 ```mermaid
 flowchart LR
@@ -23,23 +23,21 @@ flowchart LR
     U --> CLI[main.py CLI]
     UI --> G[LangGraph Orchestrator]
     CLI --> G
-
-    G --> P[Planner Agent]
-    P --> R[Researcher Agent]
-    R --> RE[Reasoner Agent]
-    RE --> S[Synthesiser Agent]
-    S --> OUT[Final Answer + Sources]
-
+    G --> P[Planner]
+    P --> R[Researcher]
+    R --> RE[Reasoner]
+    RE --> S[Synthesiser]
+    S --> OUT[Answer and Sources]
     R --> RET[Retriever]
-    RET --> VS[(Chroma Vector Store)]
+    RET --> VS[(Chroma)]
 ```
 
-## 3. Orchestrator Design
+## Orchestrator and State Contract
 
-**Module**: `src/orchestrator/graph.py`  
-**State contract**: `src/orchestrator/state.py`
+- Graph: `src/orchestrator/graph.py`
+- State: `src/orchestrator/state.py`
 
-The orchestrator uses `StateGraph(AgentState)` with a **linear workflow**:
+Execution order is linear:
 
 1. `planner`
 2. `researcher`
@@ -47,115 +45,68 @@ The orchestrator uses `StateGraph(AgentState)` with a **linear workflow**:
 4. `synthesiser`
 5. `END`
 
-`AgentState` is the shared data contract across nodes:
+Key `AgentState` envelopes:
 
 - Input: `query`
 - Planning: `sub_tasks`, `planning_reasoning`
 - Retrieval: `retrieved_docs`, `retrieval_metadata`
 - Analysis: `analysis`, `overall_assessment`
 - Output: `final_answer`, `sources`
-- Optional tool envelope: `tool_results`
-- Execution status: `error`, `current_agent`
+- Optional tools: `tool_results`
+- Status: `error`, `current_agent`
 
-## 4. Agent Responsibilities
+## Agent Responsibilities
 
-### Planner (`src/agents/planner.py`)
-- Uses Cohere chat model via `get_agent_llm("planner")`
-- Produces structured JSON (`reasoning` + `sub_tasks`)
-- Sub-tasks include `id`, `task`, `priority`, `keywords`
+- Planner: decomposes query into structured sub-tasks.
+- Researcher: retrieves and reranks evidence, then deduplicates.
+- Reasoner: analyzes evidence by sub-task with confidence and gap tracking.
+- Synthesiser: produces final answer and normalized citations.
 
-### Researcher (`src/agents/researcher.py`)
-- Reformulates each sub-task into optimized retrieval queries
-- Uses `get_retriever(use_rerank=True)`
-- Retrieves from vector store, deduplicates by document content hash
-- Annotates retrieved docs with `retrieval_task_id` and `retrieval_query`
+## Ingestion and Retrieval Path
 
-### Reasoner (`src/agents/reasoner.py`)
-- Consumes sub-tasks + retrieved docs
-- Produces per-task analysis with findings/evidence/contradictions/gaps/confidence
-- Returns `analysis` + `overall_assessment`
+Entry points:
 
-### Synthesiser (`src/agents/synthesiser.py`)
-- Produces final markdown answer with citation instructions
-- Builds normalized source objects from retrieved document metadata
-- Deduplicates sources and returns `final_answer` + `sources`
+- `src/ingest.py`
+- `src/loaders/pipeline.py`
 
-## 5. RAG Subsystem
+Flow:
 
-### Embeddings (`src/rag/embeddings.py`)
-- Cohere `embed-english-v3.0`
+- Notion loader extracts catalog metadata.
+- arXiv loader fetches full paper text when IDs exist.
+- Pipeline merges metadata and content.
+- Text processing chunks documents.
+- Vector store manager persists embeddings to Chroma.
 
-### Vector Store (`src/rag/vectorstore.py`)
-- Chroma persistent collection (path from settings)
-- Sanitizes metadata for Chroma compatibility
-- Supports batched writes with delay controls
+## Tool Agent Subsystem
 
-### Retriever (`src/rag/retriever.py`)
-- Base retriever from Chroma (`k = settings.retrieval_k`)
-- Optional reranking via `CohereRerank`
-- Falls back to base retriever if reranker init fails
+Implemented framework:
 
-### Text Processing (`src/rag/text_processing.py`)
-- Recursive chunking defaults
-- Markdown-aware splitting path for Notion-style content
+- `src/tools/base.py`
+- `src/tools/registry.py`
+- `src/tools/client.py`
 
-## 6. Ingestion Data Flow
+Implemented tool capabilities:
 
-**Entry point**: `src/ingest.py`  
-**Pipeline**: `src/loaders/pipeline.py`
-
-```mermaid
-flowchart LR
-    N[Notion DB Loader] --> E[NotionEntry parse]
-    E --> SEP{Has arXiv ID?}
-    SEP -->|Yes| A[Arxiv Loader fetch]
-    SEP -->|No| NN[Notion note->Document]
-    A --> M[Merged document set]
-    NN --> M
-    M --> C[Chunking]
-    C --> V[VectorStoreManager.add_documents]
-    V --> CH[(Chroma Persisted Index)]
-```
-
-Key behavior:
-- Notion metadata is the primary catalog.
-- arXiv documents are enriched with Notion metadata.
-- Final chunked docs are embedded and persisted to Chroma.
-
-## 7. Tool Agent Subsystem (A2A-style)
-
-**Modules**: `src/tools/base.py`, `src/tools/registry.py`, `src/tools/client.py`, individual tool files
-
-Implemented capabilities:
-- Web search
-- Code execution (sandboxed subprocess with restricted imports)
-- Citation validation (arXiv)
-- Math solving (SymPy)
-- Diagram generation (Mermaid syntax)
-
-Design pattern:
-- Tool agents expose an `AgentCard` and async `execute()`
-- `ToolRegistry` supports discovery + health checks
-- `A2AToolClient` supports discovery, best-agent selection, timeout-wrapped invocation
+- web search
+- code execution (sandboxed subprocess)
+- citation validation
+- symbolic math solving
+- diagram generation
 
 Current boundary:
-- `AgentState` includes `tool_results`, and tool infrastructure is present.
-- The main LangGraph node chain currently does **not** invoke the tool client directly.
 
-## 8. Entry Points and Runtime Modes
+- Tool framework and state envelope are implemented.
+- Core graph remains linear and invokes tools from agent logic when needed.
 
-- `main.py`: CLI query execution, ingestion trigger, and connection tests
-- `app.py`: Streamlit chat UI, streaming graph events, source rendering, session persistence
-- `src/ingest.py`: batch ingestion into vector store
+## Cross-Cutting Concerns
 
-## 9. Cross-Cutting Concerns
+- Configuration: `config/settings.py`
+- Tracing: `src/utils/tracing.py` and `docs/utils/tracing.md`
+- Session persistence: `src/utils/session_manager.py` and `docs/utils/session_manager.md`
 
-- **Configuration**: `config/settings.py` (Pydantic settings, model and retrieval parameters, tool toggles)
-- **Tracing**: `src/utils/tracing.py` (`agent_trace` decorator + LangSmith env setup)
-- **Session persistence (UI)**: `src/utils/session_manager.py` (`data/sessions/*.json`)
+## Related Docs
 
-## 10. Current Architectural Constraints
-
-- Orchestration is intentionally linear (no retry/loopback edges yet).
-- Retrieval and generation are tightly coupled to Cohere models/APIs.
-- Tool-agent framework exists as an extensibility surface, pending full orchestration integration.
+- Data model and invariants: `docs/database.md`
+- Engineering patterns: `docs/patterns.md`
+- Testing policy: `docs/testing.md`
+- Operational commands: `docs/commands.md`
