@@ -163,9 +163,6 @@ venv.bak/
 # Worktrees
 .worktrees
 
-# AGENTS.md
-AGENTS.md
-
 # mypy
 .mypy_cache/
 .dmypy.json
