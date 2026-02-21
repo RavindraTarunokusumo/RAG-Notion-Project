@@ -6,6 +6,7 @@ Implements the Reasoner node that evaluates retrieved evidence against planned s
 ## Main responsibilities
 - Convert retrieved docs into prompt-ready text.
 - Request structured analysis from LLM.
+- Return deterministic gap analysis when no documents are retrieved.
 - Return per-task findings and an overall assessment.
 - Produce explicit error payloads on failure.
 

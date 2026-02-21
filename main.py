@@ -42,20 +42,20 @@ def run_agentic_rag(query: str):
         
         if result.get("error"):
             logger.error(f"Pipeline failed: {result['error']}")
-            print(f"\n❌ Error: {result['error']}")
+            print(f"\nERROR: {result['error']}")
             return
 
         # Output Results
         print("\n" + "="*80)
-        print("🤖 FINAL ANSWER")
+        print("FINAL ANSWER")
         print("="*80)
         print(result["final_answer"])
         print("\n" + "-"*80)
         
         if result.get("sources"):
-            print("📚 SOURCES:")
+            print("SOURCES:")
             for source in result["sources"]:
-                print(f" • {source.get('title', 'Untitled')} ({source.get('source', 'Unknown')})")
+                print(f" - {source.get('title', 'Untitled')} ({source.get('source', 'Unknown')})")
         else:
             print("Sources: None found.")
             
@@ -64,7 +64,7 @@ def run_agentic_rag(query: str):
         
     except Exception as e:
         logger.error(f"Execution failed: {e}")
-        print(f"\n❌ System Error: {e}")
+        print(f"\nSYSTEM ERROR: {e}")
 
 def test_connection():
     """Verifies connections to external services."""
@@ -72,21 +72,21 @@ def test_connection():
     
     # 1. Tracing (LangSmith) - Optional if API keys are set
     try:
-        print(f"🔹 LangSmith: Checking project '{settings.langsmith_project}'...")
+        print(f"LangSmith: Checking project '{settings.langsmith_project}'...")
         initialize_tracing()
-        print("   ✅ Tracing initialized")
+        print("   OK: Tracing initialized")
     except Exception as e:
-        print(f"   ❌ LangSmith Failed: {e}")
+        print(f"   ERROR: LangSmith failed: {e}")
 
-    # 2. Embeddings (Cohere)
+    # 2. Embeddings (Qwen/DashScope)
     try:
         from src.rag.embeddings import get_embeddings
-        print("🔹 Cohere Embeddings: Sending test query...")
+        print("Embedding provider: sending test query...")
         emb = get_embeddings()
         vec = emb.embed_query("ping")
-        print(f"   ✅ Success (Vector dim: {len(vec)})")
+        print(f"   OK: Success (Vector dim: {len(vec)})")
     except Exception as e:
-        print(f"   ❌ Cohere Failed: {e}")
+        print(f"   ERROR: Embedding provider failed: {e}")
         
     print("\nConnection test complete.")
 
@@ -99,7 +99,11 @@ def main():
     # Utility Flags
     parser.add_argument("--ingest", action="store_true", help="Run document ingestion process")
     parser.add_argument("--rebuild", action="store_true", help="Force rebuild during ingestion (use with --ingest)")
-    parser.add_argument("--test-conn", action="store_true", help="Test API connections (LangSmith, Cohere)")
+    parser.add_argument(
+        "--test-conn",
+        action="store_true",
+        help="Test API connections (LangSmith, LLM/embedding providers)",
+    )
     parser.add_argument("--verbose", "-v", action="store_true", help="Enable debug logging")
     
     args = parser.parse_args()
@@ -116,7 +120,7 @@ def main():
 
     if args.ingest:
         from src.ingest import run_ingestion
-        print("🚀 Starting Ingestion Pipeline...")
+        print("Starting ingestion pipeline...")
         run_ingestion(rebuild=args.rebuild)
         return
 

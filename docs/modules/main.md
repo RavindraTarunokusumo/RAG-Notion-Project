@@ -9,6 +9,7 @@
 - Trigger ingestion (`--ingest`) and optional rebuild mode.
 - Validate external integrations with `--test-conn`.
 - Configure logging verbosity.
+- Print ASCII-only CLI status/error output for Windows terminal compatibility.
 
 ## Key functions
 - `run_agentic_rag(query)`: builds initial state, invokes graph, prints answer and sources.

@@ -8,3 +8,4 @@
 - **2026-02-09** Added Streamlit interface and session management features (NRAG-050 to NRAG-054).
 - **2026-02-11** Added A2A tool agent framework and tool implementations (NRAG-027 to NRAG-033).
 - **2026-02-21** Restructured repository documentation into layered agent harness model and archived legacy docs.
+- **2026-02-21** Hardened no-document reasoner behavior, normalized Cohere reasoning output for JSON parsing, and made CLI output ASCII-safe on Windows terminals.

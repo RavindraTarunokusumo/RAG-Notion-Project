@@ -15,6 +15,25 @@ class ReasonerOutput(BaseModel):
     analysis: list[Analysis] = Field(description="List of analysis for each sub-task")
     overall_assessment: str = Field(description="High-level summary of what was found and what is missing")
 
+
+def _build_no_docs_analysis(sub_tasks: list[dict]) -> list[Analysis]:
+    """Create deterministic gap analysis when retrieval returns no documents."""
+    analysis: list[Analysis] = []
+    for index, task in enumerate(sub_tasks, start=1):
+        task_id = task.get("id", index)
+        task_text = task.get("task", "No task description provided.")
+        analysis.append(
+            {
+                "sub_task_id": task_id,
+                "key_findings": [],
+                "supporting_evidence": [],
+                "contradictions": [],
+                "confidence": 0.0,
+                "gaps": [f"No retrieved evidence for sub-task: {task_text}"],
+            }
+        )
+    return analysis
+
 def get_reasoner_prompt(parser):
     return ChatPromptTemplate.from_messages([
         ("system", """You are an expert Research Analyst. Your goal is to analyze retrieved documents against the planned sub-tasks.
@@ -56,8 +75,19 @@ def reasoner_node(state: AgentState) -> dict:
     if not sub_tasks:
         logger.warning("No sub-tasks to analyze")
         return {"analysis": [], "overall_assessment": "No tasks to analyze"}
-        
-    doc_str = format_docs(docs) if docs else "No documents retrieved."
+
+    if not docs:
+        logger.warning("No documents retrieved; returning deterministic gap analysis")
+        return {
+            "analysis": _build_no_docs_analysis(sub_tasks),
+            "overall_assessment": (
+                "No supporting documents were retrieved, so all sub-tasks remain unanswered. "
+                "Review retriever configuration, source data availability, and API limits before retrying."
+            ),
+            "current_agent": "reasoner",
+        }
+
+    doc_str = format_docs(docs)
     
     try:
         llm = get_agent_llm("reasoner")
