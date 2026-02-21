@@ -8,6 +8,7 @@ This is the canonical documentation entry table for the repository.
 |---|---|
 | `README.md` | Repo overview, setup, usage |
 | `docs/PROJECT.md` | Architecture and system design details |
+| `docs/debugging.md` | End-to-end debugging suite usage, events, and scope |
 | `TODO.md` | Backlog and next tasks |
 | `docs/ISSUE_FORMAT.md` | Issue and reporting template |
 | `docs/modules/README.md` | Module documentation index |
@@ -47,6 +48,7 @@ This is the canonical documentation entry table for the repository.
 | Utilities | `src/utils/helpers.py` | `docs/modules/utils/helpers.md` |
 | Utilities | `src/utils/tracing.py` | `docs/modules/utils/tracing.md` |
 | Utilities | `src/utils/session_manager.py` | `docs/modules/utils/session_manager.md` |
+| Utilities | `src/utils/debugging.py` | `docs/modules/utils/debugging.md` |
 | Tool framework | `src/tools/__init__.py` | `docs/modules/tools/package.md` |
 | Tool framework | `src/tools/base.py` | `docs/modules/tools/base.md` |
 | Tool framework | `src/tools/registry.py` | `docs/modules/tools/registry.md` |

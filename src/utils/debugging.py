@@ -1,6 +1,5 @@
 import json
 import logging
-import os
 import time
 import uuid
 from contextlib import contextmanager
@@ -155,7 +154,7 @@ class DebugTraceSession:
         serialized = _safe_json(record)
         with self.trace_path.open("a", encoding="utf-8") as file:
             file.write(serialized)
-            file.write(os.linesep)
+            file.write("\n")
 
     def log_event(self, event_type: str, payload: dict[str, Any]) -> None:
         self.events += 1

@@ -37,6 +37,7 @@ This folder contains module-level documentation extracted from the codebase.
 - `docs/modules/utils/helpers.md`
 - `docs/modules/utils/tracing.md`
 - `docs/modules/utils/session_manager.md`
+- `docs/modules/utils/debugging.md`
 
 ## Tools
 - `docs/modules/tools/package.md`

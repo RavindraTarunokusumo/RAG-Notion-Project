@@ -218,3 +218,7 @@ __marimo__/
 # Project Data
 data/*
 !data/.gitkeep
+
+# Runtime debugging traces
+logs/*
+!logs/.gitkeep
