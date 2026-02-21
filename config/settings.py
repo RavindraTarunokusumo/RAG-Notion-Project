@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import AliasChoices, BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -18,34 +20,90 @@ class DebugConfig(BaseModel):
     log_level: str = "INFO"
 
 
-class CohereModelConfig(BaseModel):
-    planner_model: str = "command-r-08-2024"
-    researcher_model: str = "command-r-08-2024"
-    reasoner_model: str = "command-a-reasoning-08-2025"
-    synthesiser_model: str = "command-r-plus-08-2024"
-    
-    planner_temperature: float = 0.0
-    researcher_temperature: float = 0.0
-    reasoner_temperature: float = 0.1
-    synthesiser_temperature: float = 0.3
+ProviderName = Literal["qwen", "openai"]
+
+
+class AgentModelProfile(BaseModel):
+    provider: ProviderName = "qwen"
+    model: str = "qwen-flash-2025-07-28"
+    temperature: float = 0.0
+    max_tokens: int = 2048
+
+
+class ModelConfig(BaseModel):
+    planner: AgentModelProfile = AgentModelProfile(
+        provider="qwen",
+        model="qwen-flash-2025-07-28",
+        temperature=0.0,
+        max_tokens=1024,
+    )
+    researcher: AgentModelProfile = AgentModelProfile(
+        provider="qwen",
+        model="qwen-flash-2025-07-28",
+        temperature=0.0,
+        max_tokens=2048,
+    )
+    reasoner: AgentModelProfile = AgentModelProfile(
+        provider="qwen",
+        model="qwen-flash-2025-07-28",
+        temperature=0.1,
+        max_tokens=4096,
+    )
+    synthesiser: AgentModelProfile = AgentModelProfile(
+        provider="qwen",
+        model="qwen-flash-2025-07-28",
+        temperature=0.3,
+        max_tokens=4096,
+    )
+    tool_agent: AgentModelProfile = AgentModelProfile(
+        provider="qwen",
+        model="qwen-flash-2025-07-28",
+        temperature=0.2,
+        max_tokens=2048,
+    )
+    embedding_provider: ProviderName = "qwen"
+    embedding_model: str = "text-embedding-v4"
+    rerank_provider: ProviderName = "qwen"
+    rerank_model: str = "qwen3-rerank"
 
 class Settings(BaseSettings):
     # API Keys
-    cohere_api_key: str = Field(..., description="Cohere API Key")
+    dashscope_api_key: str = Field(..., description="DashScope API Key")
+    openai_api_key: str | None = Field(None, description="OpenAI API Key")
+    openai_base_url: str | None = Field(
+        None,
+        description="Optional OpenAI-compatible base URL for custom endpoints",
+    )
     notion_token: str = Field(..., description="Notion Integration Token")
     notion_database_id: str = Field(..., description="Notion Database ID")
-    langsmith_api_key: str = Field(..., validation_alias=AliasChoices("langsmith_api_key", "langchain_api_key"), description="LangSmith API Key")
+    langsmith_api_key: str = Field(
+        ...,
+        validation_alias=AliasChoices("langsmith_api_key", "langchain_api_key"),
+        description="LangSmith API Key",
+    )
     
     # LangSmith
-    langsmith_tracing: bool = Field(True, validation_alias=AliasChoices("langsmith_tracing", "langchain_tracing_v2"))
-    langsmith_project: str = Field("notion-agentic-rag", validation_alias=AliasChoices("langsmith_project", "langchain_project"))
-    langsmith_endpoint: str = Field("https://eu.api.smith.langchain.com", validation_alias=AliasChoices("langsmith_endpoint", "langchain_endpoint"))
+    langsmith_tracing: bool = Field(
+        True,
+        validation_alias=AliasChoices(
+            "langsmith_tracing",
+            "langchain_tracing_v2",
+        ),
+    )
+    langsmith_project: str = Field(
+        "notion-agentic-rag",
+        validation_alias=AliasChoices("langsmith_project", "langchain_project"),
+    )
+    langsmith_endpoint: str = Field(
+        "https://eu.api.smith.langchain.com",
+        validation_alias=AliasChoices("langsmith_endpoint", "langchain_endpoint"),
+    )
     
     # Vector Store
     chroma_persist_dir: str = "./data/chroma_db"
     collection_name: str = "notion_knowledge_base"
     embedding_batch_size: int = 16
-    embedding_delay: float = 1.0 # Prevent rate limiting (free tier)
+    embedding_delay: float = 1.0  # Prevent rate limiting (free tier)
 
     model_config = SettingsConfigDict(extra="ignore", env_file=".env", env_file_encoding="utf-8")
     
@@ -56,7 +114,7 @@ class Settings(BaseSettings):
     rerank_top_n: int = 5
     
     # Model Config
-    models: CohereModelConfig = CohereModelConfig()
+    models: ModelConfig = ModelConfig()
 
     # Tool Agents
     tool_agents: ToolAgentConfig = ToolAgentConfig()

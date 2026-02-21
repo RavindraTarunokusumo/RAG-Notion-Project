@@ -1,64 +1,64 @@
-import logging
-
-import cohere
-from langchain_cohere import ChatCohere
+import pytest
 
 from config.settings import settings
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# MONKEY PATCH START
-# Patch the ThinkingAssistantMessageResponseContentItem to have a text attribute
-# which returns the actual thinking content, so langchain can consume it (or ignore it).
-
-if hasattr(cohere, "ThinkingAssistantMessageResponseContentItem"):
-    logger.info("Found ThinkingAssistantMessageResponseContentItem, patching it...")
-    
-    original_init = cohere.ThinkingAssistantMessageResponseContentItem.__init__
-    
-    # We can property patch it or just add the attribute
-    # Since it might be a Pydantic model (likely), we might need to add a property
-    
-    class PatchedThinking(cohere.ThinkingAssistantMessageResponseContentItem):
-        @property
-        def text(self):
-            return self.thinking
-
-    # Re-assign the class in the module so langchain uses our patched version?
-    # No, langchain uses the type returned by the API client.
-    # We need to modify the class itself.
-    
-    def get_text(self):
-        return self.thinking
-        
-    cohere.ThinkingAssistantMessageResponseContentItem.text = property(get_text)
-    logger.info("Patch applied.")
-else:
-    logger.warning("ThinkingAssistantMessageResponseContentItem not found in cohere module.")
-
-# MONKEY PATCH END
+from src.agents.llm_factory import get_agent_llm
 
 
-def test_reasoning_model():
-    try:
-        logger.info(f"Testing model: {settings.models.reasoner_model}")
-        # Ensure we are using the reasoning model for the test
-        reasoner_model = "command-a-reasoning-08-2025" # Explicitly use the one that failed
-        
-        llm = ChatCohere(
-            model=reasoner_model,
-            cohere_api_key=settings.cohere_api_key,
-            temperature=0.1
-        )
-        
-        response = llm.invoke("What is 1+1? Explain your reasoning.")
-        logger.info("Success!")
-        logger.info(response)
-    except Exception as e:
-        logger.error(f"Failed: {e}")
-        import traceback
-        traceback.print_exc()
+def test_qwen_provider_selected_for_planner(monkeypatch):
+    captured: dict = {}
 
-if __name__ == "__main__":
-    test_reasoning_model()
+    class DummyTongyi:
+        def __init__(self, **kwargs):
+            captured.update(kwargs)
+
+    monkeypatch.setattr(
+        "src.agents.providers.qwen.ChatTongyi",
+        DummyTongyi,
+    )
+    monkeypatch.setattr(settings.models.planner, "provider", "qwen")
+    monkeypatch.setattr(
+        settings.models.planner, "model", "qwen-flash-2025-07-28"
+    )
+
+    llm = get_agent_llm("planner")
+
+    assert isinstance(llm, DummyTongyi)
+    assert captured["model"] == "qwen-flash-2025-07-28"
+
+
+def test_openai_provider_selected_for_planner(monkeypatch):
+    captured: dict = {}
+
+    class DummyOpenAI:
+        def __init__(self, **kwargs):
+            captured.update(kwargs)
+
+    monkeypatch.setattr(
+        "src.agents.providers.openai.ChatOpenAI",
+        DummyOpenAI,
+    )
+    monkeypatch.setattr(settings.models.planner, "provider", "openai")
+    monkeypatch.setattr(settings.models.planner, "model", "gpt-4o-mini")
+    monkeypatch.setattr(settings, "openai_api_key", "test-openai-key")
+
+    llm = get_agent_llm("planner")
+
+    assert isinstance(llm, DummyOpenAI)
+    assert captured["model"] == "gpt-4o-mini"
+    assert captured["api_key"] == "test-openai-key"
+
+
+def test_missing_openai_api_key_raises(monkeypatch):
+    monkeypatch.setattr(settings.models.planner, "provider", "openai")
+    monkeypatch.setattr(settings.models.planner, "model", "gpt-4o-mini")
+    monkeypatch.setattr(settings, "openai_api_key", None)
+
+    with pytest.raises(ValueError, match="OPENAI_API_KEY"):
+        get_agent_llm("planner")
+
+
+def test_unknown_provider_raises(monkeypatch):
+    monkeypatch.setattr(settings.models.planner, "provider", "unknown")
+
+    with pytest.raises(ValueError, match="Unsupported chat provider"):
+        get_agent_llm("planner")

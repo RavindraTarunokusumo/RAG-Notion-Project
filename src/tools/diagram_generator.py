@@ -59,16 +59,9 @@ class DiagramGeneratorAgent(ToolAgent):
             return ToolResult(success=False, data=None, error="No description provided")
 
         try:
-            from langchain_cohere import ChatCohere
+            from src.agents.llm_factory import get_agent_llm
 
-            from config.settings import settings
-
-            llm = ChatCohere(
-                model=settings.models.synthesiser_model,
-                temperature=0.2,
-                cohere_api_key=settings.cohere_api_key,
-                max_tokens=2048,
-            )
+            llm = get_agent_llm("tool_agent")
 
             prompt = (
                 f"Generate a Mermaid {diagram_type} diagram for the following description. "

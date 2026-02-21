@@ -1,10 +1,10 @@
 # src/rag/embeddings.py
 
 ## Purpose
-Cohere embeddings factory used by vectorstore and retrieval components.
+DashScope embeddings factory used by vectorstore and retrieval components.
 
 ## Main responsibilities
-- Instantiate `CohereEmbeddings` with project settings.
+- Instantiate `DashScopeEmbeddings` using configured provider/model.
 - Expose a simple factory for callers.
 
 ## Key symbols
@@ -12,5 +12,5 @@ Cohere embeddings factory used by vectorstore and retrieval components.
 - `get_embeddings()`
 
 ## Defaults
-- Model: `embed-english-v3.0`
-- User agent: `notion-agentic-rag`
+- Provider: `qwen`
+- Model: `text-embedding-v4`

@@ -20,6 +20,8 @@ cp .env.example .env
 ```
 
 Populate `.env` with required API keys, then ingest your knowledge base:
+- Required for default runtime: `DASHSCOPE_API_KEY`
+- Optional (only if OpenAI provider is selected): `OPENAI_API_KEY`, `OPENAI_BASE_URL`
 
 ```bash
 uv run python main.py --ingest

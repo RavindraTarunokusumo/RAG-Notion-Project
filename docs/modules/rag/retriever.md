@@ -1,11 +1,11 @@
 # src/rag/retriever.py
 
 ## Purpose
-Constructs document retrievers from the vector store, optionally with Cohere reranking.
+Constructs document retrievers from the vector store, optionally with DashScope reranking.
 
 ## Main responsibilities
 - Build base retriever from Chroma via `as_retriever`.
-- Optionally wrap with `ContextualCompressionRetriever` + `CohereRerank`.
+- Optionally wrap with `ContextualCompressionRetriever` + `DashScopeRerank`.
 - Fall back to base retriever if reranker initialization fails.
 
 ## Key function
@@ -14,4 +14,4 @@ Constructs document retrievers from the vector store, optionally with Cohere rer
 ## Dependencies
 - `src.rag.vectorstore.get_vector_store`
 - `langchain.retrievers.ContextualCompressionRetriever`
-- `langchain_cohere.CohereRerank`
+- `langchain_community.document_compressors.dashscope_rerank.DashScopeRerank`

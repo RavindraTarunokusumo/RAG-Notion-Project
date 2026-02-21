@@ -1,7 +1,9 @@
 import logging
 
 from langchain.retrievers import ContextualCompressionRetriever
-from langchain_cohere import CohereRerank
+from langchain_community.document_compressors.dashscope_rerank import (
+    DashScopeRerank,
+)
 from langchain_core.retrievers import BaseRetriever
 
 from config.settings import settings
@@ -22,13 +24,17 @@ def get_retriever(use_rerank: bool = True) -> BaseRetriever:
     if not use_rerank:
         return base_retriever
         
-    logger.info("Initializing Cohere Rerank retriever...")
+    logger.info("Initializing Qwen DashScope rerank retriever...")
     try:
-        compressor = CohereRerank(
-            cohere_api_key=settings.cohere_api_key,
-            model="rerank-english-v3.0",
+        if settings.models.rerank_provider != "qwen":
+            raise ValueError(
+                "Only 'qwen' rerank provider is supported in this build."
+            )
+
+        compressor = DashScopeRerank(
+            api_key=settings.dashscope_api_key,
+            model=settings.models.rerank_model,
             top_n=settings.rerank_top_n,
-            user_agent="notion-agentic-rag"
         )
         
         reranker = ContextualCompressionRetriever(

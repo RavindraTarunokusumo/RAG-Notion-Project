@@ -1,6 +1,6 @@
 ## Project Vision
 
-Build an Agentic RAG system that retrieves and synthesizes information from a Notion knowledge base using four specialized AI agents (Planner, Researcher, Reasoner, Synthesiser) communicating via the A2A protocol for tool calling, powered by Cohere's Command R/R+ models through LangChain/LangGraph with Agent Lightning integration for continual learning and optimization.
+Build an Agentic RAG system that retrieves and synthesizes information from a Notion knowledge base using four specialized AI agents (Planner, Researcher, Reasoner, Synthesiser) communicating via the A2A protocol for tool calling, powered by provider-based models (Qwen default, OpenAI optional) through LangChain/LangGraph with Agent Lightning integration for continual learning and optimization.
 
 ---
 

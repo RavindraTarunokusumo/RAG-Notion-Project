@@ -618,10 +618,17 @@ def main():
         with st.expander("⚙️ Settings"):
             st.markdown("#### Models")
             
-            # Planner Model
-            model_options = ["command-r-08-2024", "command-r-plus-08-2024"]
-            current_planner = settings.models.planner_model
-            planner_index = model_options.index(current_planner) if current_planner in model_options else 0
+            # Planner model
+            model_options = [
+                "qwen-flash-2025-07-28",
+                "gpt-4o-mini",
+            ]
+            current_planner = settings.models.planner.model
+            planner_index = (
+                model_options.index(current_planner)
+                if current_planner in model_options
+                else 0
+            )
             
             planner_model = st.selectbox(
                 "Planner Model",
@@ -681,7 +688,12 @@ def main():
                 st.session_state.verbose_mode = verbose_mode
                 
                 # Update Global Settings
-                settings.models.planner_model = planner_model
+                settings.models.planner.model = planner_model
+                settings.models.planner.provider = (
+                    "qwen"
+                    if planner_model.startswith("qwen")
+                    else "openai"
+                )
                 settings.retrieval_k = retrieval_k
                 settings.rerank_top_n = rerank_top_n
                 settings.debug.log_level = (

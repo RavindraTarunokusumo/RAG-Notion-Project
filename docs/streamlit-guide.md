@@ -107,7 +107,7 @@ The system uses 4 specialized agents:
 
 1. **🎯 Planner**: Decomposes your question into sub-tasks
 2. **🔍 Researcher**: Retrieves relevant documents from the vector store
-3. **🧠 Reasoner**: Analyzes the retrieved information using Cohere's reasoning model
+3. **🧠 Reasoner**: Analyzes the retrieved information using the configured provider model
 4. **✍️ Synthesiser**: Generates a comprehensive answer with numbered citations
 
 ## Source Citations
@@ -137,7 +137,7 @@ Within the sources expander:
 - Check that all dependencies are installed: `uv sync`
 
 ### "No response from agent"
-- Check your Cohere API key and quota
+- Check your provider API key and quota (DashScope by default)
 - Enable verbose logging in `main.py` to see detailed errors
 - Check LangSmith traces if tracing is enabled
 

@@ -1,16 +1,16 @@
 # src/agents/llm_factory.py
 
 ## Purpose
-Factory for per-agent Cohere chat models, including compatibility patching for reasoning responses.
+Factory for per-agent chat models with provider abstraction.
 
 ## Main responsibilities
-- Define model/temperature/token settings per agent role.
-- Instantiate `ChatCohere` for planner/researcher/reasoner/synthesiser/tool-agent.
-- Apply runtime patch that merges Cohere V2 Thinking+Text blocks for LangChain compatibility.
+- Resolve per-agent provider/model config.
+- Build provider-specific chat models through a registry.
+- Expose provider-agnostic model info for UI/debugging.
 
 ## Key symbols
-- `_apply_cohere_patch(llm_instance)`
 - `_get_agent_configs()`
+- `_build_chat_model(profile)`
 - `get_agent_llm(agent_type)`
 - `get_model_info(agent_type)`
 

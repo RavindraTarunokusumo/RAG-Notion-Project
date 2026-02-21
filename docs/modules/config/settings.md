@@ -5,17 +5,18 @@ Centralized runtime configuration using Pydantic settings loaded from environmen
 
 ## Main responsibilities
 - Define tool-agent feature flags (`ToolAgentConfig`).
-- Define per-agent Cohere model and temperature defaults (`CohereModelConfig`).
+- Define provider-based model profiles for each agent and retrieval stage (`ModelConfig`).
 - Define API keys, LangSmith settings, vector store settings, and RAG tunables (`Settings`).
 - Instantiate a singleton `settings` object at import time.
 
 ## Key models
 - `ToolAgentConfig`
-- `CohereModelConfig`
+- `AgentModelProfile`
+- `ModelConfig`
 - `Settings`
 
 ## Important fields
-- API/auth: `cohere_api_key`, `notion_token`, `notion_database_id`, `langsmith_api_key`
+- API/auth: `dashscope_api_key`, `openai_api_key`, `openai_base_url`, `notion_token`, `notion_database_id`, `langsmith_api_key`
 - Tracing: `langsmith_tracing`, `langsmith_project`, `langsmith_endpoint`
 - Retrieval: `chunk_size`, `chunk_overlap`, `retrieval_k`, `rerank_top_n`
 - Vector store: `chroma_persist_dir`, `collection_name`, `embedding_batch_size`, `embedding_delay`
