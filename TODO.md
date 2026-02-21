@@ -113,10 +113,10 @@ Branch: `epic/model-ecosystem-expansion`
 ## Suggested Order of Execution
 
 1. **TD-001/002/003** - Harden the foundation (error handling, logging, validation)
-2. **Session 9 (NRAG-062 to 065)** - AgentLightning foundation (start collecting trajectories early)
+5. **Model Ecosystem (NRAG-059 to 061)** - Multi-provider support (Cohere API requires rate limiting)
 3. **NRAG-055/057/058** - UI polish (extended models, autosave, KB management)
 4. **Session 10 (NRAG-066 to 068)** - Feedback & APO prompt optimization
-5. **Model Ecosystem (NRAG-059 to 061)** - Multi-provider support
+2. **Session 9 (NRAG-062 to 065)** - AgentLightning foundation (collect trajectories once full system operational)
 6. **Session 11 (NRAG-070 to 072)** - Evaluation & analytics
 7. **Deployment** - Containerization, API, cloud
 8. **Advanced Features** - Memory, caching, multi-DB
