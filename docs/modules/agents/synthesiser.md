@@ -8,6 +8,7 @@ Implements the Synthesiser node that writes the final response and emits structu
 - Transform reasoner output into prompt context.
 - Extract, enrich, and deduplicate sources from retrieved documents.
 - Return final markdown answer plus source list.
+- Short-circuit to deterministic failure messaging when upstream retrieval errors leave no evidence.
 
 ## Key symbols
 - `get_synthesiser_prompt()`: prompt template with citation requirements.

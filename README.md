@@ -48,6 +48,12 @@ uv run ruff check .
 uv run pytest
 ```
 
+## Failure Behavior
+
+- Fatal retrieval provider errors (`429` trial/quota, `401`, `403`) now fail fast in `researcher`.
+- `reasoner` returns deterministic gap analysis when no documents are retrieved.
+- `synthesiser` avoids speculative generation when upstream retrieval failed with no evidence.
+
 ## Documentation Harness
 
 Navigation order for agents and contributors:

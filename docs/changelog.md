@@ -1,5 +1,6 @@
 # Changelog
 
+- **2026-02-24** Added fail-fast researcher behavior for fatal retrieval errors (quota/auth), resilient reasoner JSON parsing fallback, and synthesiser short-circuit when no evidence is available.
 - **2026-02-01** Initialized `AGENTS.md` and Session 1 backlog tracking.
 - **2026-02-01** Switched dependency workflow to `uv`.
 - **2026-02-01** Completed foundational project setup (NRAG-001 to NRAG-007).
