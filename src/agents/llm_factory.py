@@ -47,15 +47,23 @@ def _apply_cohere_patch(llm_instance):
                     
                     merged_text = ""
                     has_thinking = False
+                    has_text = False
+                    thinking_parts: list[str] = []
                     
                     for item in content:
                         if hasattr(item, 'thinking'):
                             has_thinking = True
-                            merged_text += f"<THINKING>\n{item.thinking}\n</THINKING>\n\n"
+                            thinking_parts.append(str(item.thinking))
                         elif hasattr(item, 'text'):
+                            has_text = True
                             merged_text += item.text
+
+                    # Prefer answer text only to keep downstream JSON parsers stable.
+                    # If no text part exists, fall back to thinking text.
+                    if not has_text and thinking_parts:
+                        merged_text = "\n".join(thinking_parts)
                     
-                    if has_thinking:
+                    if has_thinking and merged_text.strip():
                         logger.debug("Merging Reasoning trace into response content")
                         from cohere import (
                             TextAssistantMessageResponseContentItem,

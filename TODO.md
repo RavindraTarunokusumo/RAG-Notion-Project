@@ -5,6 +5,13 @@ Historical session/task logs are archived under `docs/archive/`.
 
 Last reviewed: 2026-02-21
 
+Recent checkpoints:
+[checkpoint: 52701f9]
+[checkpoint: c1d4dce]
+[checkpoint: aa9a54b]
+[checkpoint: f747fe1]
+[checkpoint: b4797b2]
+
 ## Up Next
 
 ### AgentLightning Epic (NRAG-062 to NRAG-071)

@@ -42,20 +42,20 @@ def run_agentic_rag(query: str):
         
         if result.get("error"):
             logger.error(f"Pipeline failed: {result['error']}")
-            print(f"\n❌ Error: {result['error']}")
+            print(f"\n[ERROR] {result['error']}")
             return
 
         # Output Results
         print("\n" + "="*80)
-        print("🤖 FINAL ANSWER")
+        print("FINAL ANSWER")
         print("="*80)
         print(result["final_answer"])
         print("\n" + "-"*80)
         
         if result.get("sources"):
-            print("📚 SOURCES:")
+            print("SOURCES:")
             for source in result["sources"]:
-                print(f" • {source.get('title', 'Untitled')} ({source.get('source', 'Unknown')})")
+                print(f" - {source.get('title', 'Untitled')} ({source.get('source', 'Unknown')})")
         else:
             print("Sources: None found.")
             
@@ -64,7 +64,7 @@ def run_agentic_rag(query: str):
         
     except Exception as e:
         logger.error(f"Execution failed: {e}")
-        print(f"\n❌ System Error: {e}")
+        print(f"\n[SYSTEM ERROR] {e}")
 
 def test_connection():
     """Verifies connections to external services."""
@@ -72,21 +72,21 @@ def test_connection():
     
     # 1. Tracing (LangSmith) - Optional if API keys are set
     try:
-        print(f"🔹 LangSmith: Checking project '{settings.langsmith_project}'...")
+        print(f"[CHECK] LangSmith: project '{settings.langsmith_project}'")
         initialize_tracing()
-        print("   ✅ Tracing initialized")
+        print("   [OK] Tracing initialized")
     except Exception as e:
-        print(f"   ❌ LangSmith Failed: {e}")
+        print(f"   [WARN] LangSmith failed: {e}")
 
     # 2. Embeddings (Cohere)
     try:
         from src.rag.embeddings import get_embeddings
-        print("🔹 Cohere Embeddings: Sending test query...")
+        print("[CHECK] Cohere Embeddings: sending test query...")
         emb = get_embeddings()
         vec = emb.embed_query("ping")
-        print(f"   ✅ Success (Vector dim: {len(vec)})")
+        print(f"   [OK] Success (Vector dim: {len(vec)})")
     except Exception as e:
-        print(f"   ❌ Cohere Failed: {e}")
+        print(f"   [WARN] Cohere failed: {e}")
         
     print("\nConnection test complete.")
 
@@ -116,7 +116,7 @@ def main():
 
     if args.ingest:
         from src.ingest import run_ingestion
-        print("🚀 Starting Ingestion Pipeline...")
+        print("[RUN] Starting Ingestion Pipeline...")
         run_ingestion(rebuild=args.rebuild)
         return
 
@@ -129,3 +129,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

@@ -1,9 +1,21 @@
+import pytest
+from requests import HTTPError
+
+from config.settings import settings
 from src.loaders.notion_loader import NotionKnowledgeBaseLoader
 
 
 def test_notion_knowledge_base_loader():
+    if settings.notion_database_id.startswith("test-"):
+        pytest.skip("Notion integration test skipped: placeholder database ID.")
+
     loader = NotionKnowledgeBaseLoader()
-    entries = loader.load_entries(use_cache=False)
+    try:
+        entries = loader.load_entries(use_cache=False)
+    except HTTPError as error:
+        if "401" in str(error):
+            pytest.skip("Notion integration test skipped: unauthorized credentials.")
+        raise
     
     assert isinstance(entries, list)
     assert len(entries) > 0

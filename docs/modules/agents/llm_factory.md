@@ -6,7 +6,8 @@ Factory for per-agent Cohere chat models, including compatibility patching for r
 ## Main responsibilities
 - Define model/temperature/token settings per agent role.
 - Instantiate `ChatCohere` for planner/researcher/reasoner/synthesiser/tool-agent.
-- Apply runtime patch that merges Cohere V2 Thinking+Text blocks for LangChain compatibility.
+- Apply runtime patch that merges Cohere V2 response blocks for LangChain compatibility.
+- Preserve answer text for downstream parsing (without injecting synthetic `<THINKING>` wrappers).
 
 ## Key symbols
 - `_apply_cohere_patch(llm_instance)`

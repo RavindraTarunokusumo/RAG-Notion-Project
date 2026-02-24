@@ -44,8 +44,8 @@ class Settings(BaseSettings):
     # Vector Store
     chroma_persist_dir: str = "./data/chroma_db"
     collection_name: str = "notion_knowledge_base"
-    embedding_batch_size: int = 16
-    embedding_delay: float = 1.0 # Prevent rate limiting (free tier)
+    embedding_batch_size: int = 32
+    embedding_delay: float = 5.0 # Prevent rate limiting (free tier)
 
     model_config = SettingsConfigDict(extra="ignore", env_file=".env", env_file_encoding="utf-8")
     

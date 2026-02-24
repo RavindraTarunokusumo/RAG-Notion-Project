@@ -19,6 +19,14 @@ Implements the Researcher node that converts planner sub-tasks into optimized re
 - Input from state: `sub_tasks`.
 - Output to state: `retrieved_docs`, `retrieval_metadata`, `current_agent`.
 
+### Retrieval metadata fields
+- `total_docs`: number of unique documents returned.
+- `processed_tasks`: number of sub-tasks attempted.
+- `failed_tasks`: number of sub-tasks that raised errors.
+- `fatal`: whether execution stopped due to a fatal provider error.
+- `error_type`: classified fatal/non-fatal error category (`quota_exhausted`, `auth_failed`, `transient`).
+- `aborted`: whether researcher exited early before processing all tasks.
+
 ## Dependencies
 - `src.agents.llm_factory.get_agent_llm`
 - `src.rag.retriever.get_retriever`
@@ -27,3 +35,4 @@ Implements the Researcher node that converts planner sub-tasks into optimized re
 
 ## Operational note
 - Includes `time.sleep(...)` delays to mitigate trial-tier API rate limits.
+- Fatal provider failures (`429` trial/quota, `401`, `403`) now abort the loop early and set `state.error`.

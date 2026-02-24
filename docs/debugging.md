@@ -117,6 +117,21 @@ Get-Content .\logs\trace-*.jsonl | ConvertFrom-Json | Select-Object event_type, 
 Get-Content .\logs\trace-*.jsonl | ConvertFrom-Json | Where-Object { $_.event_type -eq "node_end" }
 ```
 
+## Common Failure Signatures
+
+- Retrieval quota/auth failure:
+  - `rag.log` includes repeated `status_code: 429` or `401/403`.
+  - `researcher` sets fatal metadata:
+    - `retrieval_metadata.fatal = true`
+    - `retrieval_metadata.error_type = quota_exhausted|auth_failed`
+    - `retrieval_metadata.aborted = true`
+- Reasoner output parsing failure:
+  - Previously surfaced as `Invalid json output: <THINKING>...`.
+  - Current parser path retries after stripping thinking blocks and extracting a JSON object.
+- No-document run:
+  - `reasoner` now returns deterministic gap analysis with confidence `0.0` per sub-task.
+  - `synthesiser` skips LLM generation when upstream error exists and no docs were retrieved.
+
 ## Implementation Map
 
 - `src/utils/debugging.py`: trace session lifecycle, serialization, logging bootstrap.
