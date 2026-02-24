@@ -49,6 +49,24 @@ def synthesiser_node(state: AgentState) -> dict:
     
     query = state.get("query", "")
     analysis = state.get("analysis", [])
+    upstream_error = state.get("error")
+    retrieved_docs = state.get("retrieved_docs", [])
+
+    if upstream_error and not retrieved_docs:
+        logger.warning(
+            "Skipping synthesiser LLM call due to upstream retrieval failure."
+        )
+        return {
+            "final_answer": (
+                "I could not retrieve supporting evidence from your knowledge base, "
+                "so I cannot provide a reliable evidence-grounded answer right now.\n\n"
+                f"Original question: {query}\n\n"
+                f"Upstream error: {upstream_error}\n\n"
+                "Please verify API credentials/quota and try again."
+            ),
+            "sources": [],
+            "current_agent": "synthesiser",
+        }
     
     try:
         llm = get_agent_llm("synthesiser")
